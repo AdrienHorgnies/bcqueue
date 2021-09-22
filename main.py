@@ -33,7 +33,7 @@ def main():
     global SEED_SEQUENCE
     SEED_SEQUENCE = SeedSequence(args.seed) if args.seed else SeedSequence()
     print('Seed : ', SEED_SEQUENCE.entropy)
-    generators = spawn_generators(4)
+    generators = spawn_generators(10)
 
     # SIMULATION
     simulation(generators)
