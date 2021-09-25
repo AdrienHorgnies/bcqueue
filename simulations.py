@@ -1,6 +1,7 @@
 def simulation(generators):
-    m = MapPh(generators[5])
-    m.next()
+    # PARLER du fait que j'ai cherché les paramètres qui correspondent à la réalité.
+
+    # TODO integrate MapDoublePH, and make it easy to choose between M/M/1 and MAP/PH/1
 
     # time of arrival of transactions
     arrivals = []
@@ -48,7 +49,6 @@ def simulation(generators):
             generators[3].shuffle(waiting_tx)
             block_tx, waiting_tx = waiting_tx[:chosen_number], waiting_tx[chosen_number:]
 
-            last_selection = scheduler['selection']
             scheduler['selection'] = float('inf')
             scheduler['mining'] = next_mining()
 
@@ -82,64 +82,112 @@ def simulation(generators):
     print(f"Average number of transactions per block : {len(arrivals) / len(blocks)}")
     print(f"Average waiting time : {average_waiting}")
     print(f"Average service time : {average_service}")
+    # TODO trajectoire du nombre de tx dans le système, ça permettra de comparer M/M/1 et MAP/PH/1
 
 
-class MapPh:
+class MapDoublePh:
+    """
+    A stochastic process composed of a Map and two PhaseType processes.
+    The PhaseType processes are mutually exclusive:
+      - Only one is active at a time
+      - When the active PhaseType process is absorbed, it is swapped with the other one
+    """
+
     def __init__(self, g):
         self.g = g
 
-        self.map_state = 0
+        self.t = 0
+
+        self.map = Map(g)
+        self.active_ph = PhaseType(self.g)
+        self.inactive_ph = PhaseType(self.g)
+
+    def forward(self):
+        """
+        Bring forward the time of the simulation
+        :return:
+        """
+        self.t += self.g.exponential(- (self.map.C[self.map.state][self.map.state] +
+                                        self.active_ph.T[self.active_ph.state][self.active_ph.state]))
+
+    def next(self):
+        """
+        Run the process and return when either MAP or PH was absorbed
+        :return: The name of the process that was absorbed
+        """
+        self.forward()
+
+        # Build weight vector by appending correct rows of C, D, T and t
+        weights = (self.map.C[self.map.state] +
+                   self.map.D[self.map.state] +
+                   self.active_ph.T[self.active_ph.state] +
+                   [self.active_ph.t[self.active_ph.state]])
+        # replace negative numbers with zero, they're non events
+        weights[self.map.state] = 0
+        weights[-len(self.active_ph.T) - 1 + self.active_ph.state] = 0
+
+        # Find index of next event, using their respective probability as a weight
+        next_event = self.g.choice(range(len(self.map.C) + len(self.map.D) + len(self.active_ph.T) + 1),
+                                   1,
+                                   p=weights)[0]
+
+        # Find which event was chosen using his index
+        if next_event < len(self.map.C):
+            self.map.state = next_event
+            return self.next()
+        elif next_event < len(self.map.C) + len(self.map.D):
+            self.map.state = next_event - len(self.map.C)
+            return 'MAP'
+        elif next_event < len(weights) - 1:
+            self.active_ph.state = next_event - len(self.map.C) - len(self.map.D)
+            return self.next()
+        else:
+            self.active_ph, self.inactive_ph = self.inactive_ph, self.active_ph
+            self.active_ph.roll_state()
+            return 'PH'
+
+
+class Stationary:
+    """
+    A mathematical object that has a number of states which each of them has a different probably to occur.
+    A state is identified by its index in the probably vector.
+    """
+
+    def __init__(self, g, vector):
+        """
+
+        :param g: A random generator used to simulate random events
+        :param vector: The probably of each state
+        """
+        assert sum(vector) == 1, "A probably vector sum must be 1"
+
+        self.g = g
+        self.vector = vector
+        self.state = None
+        self.roll_state()
+
+    def roll_state(self):
+        self.state = self.g.choice(range(len(self.vector)), 1, p=self.vector)[0]
+
+# TODO ATM, generator matrices are hardcoded, they will become parameters to be provided in the future
+
+
+class Map(Stationary):
+    def __init__(self, g):
+        super().__init__(g, [0.3, 0.7])
+        # TODO make a method to compute PI from C and D (must already exist)
         self.C = [[-1, 0.2],
                   [0.9, -3]]
         self.D = [[0.5, 0.3],
                   [2, 0.1]]
 
-        self.ph_state = 1
-        self.alpha = [0.1,
-                      0.4,
-                      0.5]
+
+class PhaseType(Stationary):
+    def __init__(self, g):
+        super().__init__(g, [0.1, 0.4, 0.5])
         self.T = [[-0.2, 0, 0],
                   [0.1, -0.4, 0],
                   [1, 0, -2]]
         self.t = [0.2,
                   0.3,
                   1]
-
-    def next(self):
-        pr_and_events = [(map_transition_pr, ('MAP_TRANSITION', self.map_state, idx))
-                         for idx, map_transition_pr
-                         in enumerate(self.C[self.map_state])
-                         if map_transition_pr > 0]
-        pr_and_events += [(map_arrival_pr, ('MAP_ARRIVAL', 0))  # 0 is dummy to avoid unpack by unzip
-                          for map_arrival_pr
-                          in self.D[self.map_state]
-                          ]
-        pr_and_events += [(ph_transition_pr, ('PH_TRANSITION', self.ph_state, idx))
-                          for idx, ph_transition_pr
-                          in enumerate(self.T[self.ph_state])
-                          if ph_transition_pr > 0]
-
-        pr_and_events.append((self.t[self.ph_state], ('PH_DONE', 0)))  # 0 is dummy to avoid unpack by unzip
-
-        pr, events = zip(*pr_and_events)
-
-        next_event = self.g.choice(events, 1, pr)[0]
-
-        if next_event[0] == 'MAP_TRANSITION':
-            self.map_state = next_event[2]
-            return self.next()
-        elif next_event[0] == 'MAP_ARRIVAL':
-            # TODO WHAT NUMBER TO I DRAFT ?
-            # TODO Are all MAP_ARRIVAL same event ? I think self.C[0,1] means we draft a number
-            #  and transition to state 1
-            return self.g.exponential(0.6)
-        elif next_event[0] == 'PH_TRANSITION':
-            self.ph_state = next_event[2]
-            return self.next()
-        elif next_event[0] == 'PH_DONE':
-            # TODO WHAT NUMBER TO I DRAFT ?
-            # TODO Do I always go to state 0 ?
-            self.ph_state = 0
-            return self.g.exponential(600)
-        else:
-            raise ValueError('Unknown event')
