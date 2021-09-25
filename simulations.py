@@ -99,7 +99,7 @@ class MapDoublePh:
         self.t = 0
 
         self.map = Map(g)
-        self.active_ph = PhaseType(self.g)
+        self.ph = PhaseType(self.g)
         self.inactive_ph = PhaseType(self.g)
 
     def forward(self):
@@ -107,7 +107,7 @@ class MapDoublePh:
         Bring forward the time of the simulation by one step
         """
         self.t += self.g.exponential(- (self.map.C[self.map.state][self.map.state] +
-                                        self.active_ph.T[self.active_ph.state][self.active_ph.state]))
+                                        self.ph.T[self.ph.state][self.ph.state]))
 
     def next(self):
         """
@@ -119,14 +119,14 @@ class MapDoublePh:
         # Build weight vector by appending correct rows of C, D, T and t
         weights = (self.map.C[self.map.state] +
                    self.map.D[self.map.state] +
-                   self.active_ph.T[self.active_ph.state] +
-                   [self.active_ph.t[self.active_ph.state]])
+                   self.ph.T[self.ph.state] +
+                   [self.ph.t[self.ph.state]])
         # replace negative numbers with zero, they're non events
         weights[self.map.state] = 0
-        weights[-len(self.active_ph.T) - 1 + self.active_ph.state] = 0
+        weights[-len(self.ph.T) - 1 + self.ph.state] = 0
 
         # Find index of next event, using their respective probability as a weight
-        next_event = self.g.choice(range(len(self.map.C) + len(self.map.D) + len(self.active_ph.T) + 1),
+        next_event = self.g.choice(range(len(self.map.C) + len(self.map.D) + len(self.ph.T) + 1),
                                    1,
                                    p=weights)[0]
 
@@ -138,11 +138,11 @@ class MapDoublePh:
             self.map.state = next_event - len(self.map.C)
             return 'MAP'
         elif next_event < len(weights) - 1:
-            self.active_ph.state = next_event - len(self.map.C) - len(self.map.D)
+            self.ph.state = next_event - len(self.map.C) - len(self.map.D)
             return self.next()
         else:
-            self.active_ph, self.inactive_ph = self.inactive_ph, self.active_ph
-            self.active_ph.roll_state()
+            self.ph.roll_state()
+            self.ph, self.inactive_ph = self.inactive_ph, self.ph
             return 'PH'
 
 
