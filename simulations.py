@@ -104,8 +104,7 @@ class MapDoublePh:
 
     def forward(self):
         """
-        Bring forward the time of the simulation
-        :return:
+        Bring forward the time of the simulation by one step
         """
         self.t += self.g.exponential(- (self.map.C[self.map.state][self.map.state] +
                                         self.active_ph.T[self.active_ph.state][self.active_ph.state]))
