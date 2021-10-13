@@ -5,7 +5,7 @@ import argparse
 
 from numpy.random import SeedSequence, SFC64, Generator
 
-from simulations import simulation
+from simulations import mm_simulation
 
 SEED_SEQUENCE = None
 
@@ -36,7 +36,7 @@ def main():
     generators = spawn_generators(10)
 
     # SIMULATION
-    simulation(generators)
+    mm_simulation(generators)
 
     # GRAPHS
 
