@@ -1,34 +1,6 @@
 from models import Block
 
 
-def simulation(generators, name='map_ph'):
-    if name == 'map_ph':
-        arrivals, blocks = map_ph_simulation(generators)
-    else:
-        arrivals, blocks = mm_simulation(generators)
-
-    processed_tx = 0
-    total_waiting = 0
-    total_service = 0
-
-    for block in blocks:
-        block_tx = arrivals[processed_tx:processed_tx + block.size]
-
-        total_waiting += block.size * block.selection - sum(block_tx)
-        total_service += block.size * (block.mining - block.selection)
-
-        processed_tx += block.size
-
-    average_waiting = total_waiting / len(arrivals)
-    average_service = total_service / len(arrivals)
-
-    print(f"Number of blocks : {len(blocks)}")
-    print(f"Average number of transactions per block : {len(arrivals) / len(blocks)}")
-    print(f"Average waiting time : {average_waiting}")
-    print(f"Average service time : {average_service}")
-    # TODO trajectoire du nombre de tx dans le système, ça permettra de comparer M/M/1 et MAP/PH/1
-
-
 def mm_simulation(generators):
     # PARLER du fait que j'ai cherché les paramètres qui correspondent à la réalité.
 
@@ -40,7 +12,7 @@ def mm_simulation(generators):
     blocks = []
 
     def next_arrival():
-        return t + generators[0].exponential(0.6)
+        return t + generators[0].exponential(10)
 
     def next_selection():
         return t + generators[1].exponential(10)
@@ -60,11 +32,12 @@ def mm_simulation(generators):
     }
 
     # Duration to get an average of 1000 blocks
-    end = 1000 * 600
+    end = 50 * 600
 
     # list of txs, identified by their time of arrival
     waiting_tx = []
     block_tx = []
+    waitings = []
 
     while t < end:
         next_event_name = min(scheduler, key=scheduler.get)
@@ -73,6 +46,9 @@ def mm_simulation(generators):
         if next_event_name == 'arrival':
             waiting_tx.append(t)
             scheduler['arrival'] = next_arrival()
+            if t > end * 3 / 4:
+                arrivals.append(t)
+                waitings.append(len(waiting_tx))
         elif next_event_name == 'selection':
             # We select b transactions except if there is less than b transactions
             effective_b = min(len(waiting_tx), b)
@@ -85,7 +61,6 @@ def mm_simulation(generators):
             scheduler['mining'] = next_mining()
 
             if t > end * 3 / 4:
-                arrivals.extend(block_tx)
                 blocks.append(Block(size=effective_b, selection=t, mining=scheduler['mining']))
         elif next_event_name == 'mining':
             # put the txs out, set up next selection
@@ -94,7 +69,7 @@ def mm_simulation(generators):
             scheduler['selection'] = next_selection()
             scheduler['mining'] = float('inf')
 
-    return arrivals, blocks
+    return arrivals, waitings, blocks
 
 
 def map_ph_simulation(generators):

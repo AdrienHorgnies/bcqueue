@@ -5,7 +5,8 @@ import argparse
 
 from numpy.random import SeedSequence, SFC64, Generator
 
-from simulations import simulation
+from simulations import mm_simulation, map_ph_simulation
+from measures import print_stats, print_graphs
 
 SEED_SEQUENCE = None
 
@@ -36,9 +37,11 @@ def main():
     generators = spawn_generators(10)
 
     # SIMULATION
-    simulation(generators, name='map_ph')
+    arrivals, waitings, blocks = mm_simulation(generators)
 
     # GRAPHS
+    print_stats(arrivals, waitings, blocks)
+    print_graphs(arrivals, waitings, blocks)
 
 
 if __name__ == '__main__':
