@@ -91,11 +91,15 @@ def map_ph_simulation(generators):
     # list of txs, identified by their time of arrival
     waiting_tx = []
 
+    waiting_sizes = []
+
     while t < end:
         t, event_name = queue.next()
 
         if event_name == 'arrival':
             waiting_tx.append(t)
+            arrivals.append(t)
+            waiting_sizes.append(len(waiting_tx))
         elif event_name == 'selection':
             # We select b transactions except if there is less than b transactions
             effective_b = min(len(waiting_tx), b)
@@ -104,13 +108,14 @@ def map_ph_simulation(generators):
             block_tx, waiting_tx = waiting_tx[:effective_b], waiting_tx[effective_b:]
 
             if t > end * 3 / 4:
-                arrivals.extend(block_tx)
                 blocks.append(Block(size=effective_b, selection=t))
         elif event_name == 'mining':
-            if t > end * 3 / 4:
+            if t > end * 3 / 4 and len(blocks) > 0:
                 blocks[-1].mining = t
+    # CHEATCHODE because I stopped record before end of last block
+    blocks[-1].mining = blocks[-1].selection + 1
 
-    return arrivals, blocks
+    return arrivals, waiting_sizes, blocks
 
 
 class MapDoublePh:
@@ -154,7 +159,7 @@ class MapDoublePh:
         weights[-len(self.ph.T) - 1 + self.ph.state] = 0
 
         total = sum(weights)
-        probabilities = [w/total for w in weights]
+        probabilities = [w / total for w in weights]
 
         # Choosing next event, represented by his index
         next_event = self.g.choice(range(len(self.map.C) + len(self.map.D) + len(self.ph.T) + 1),
@@ -200,6 +205,7 @@ class StatefulProcess:
 
     def roll_state(self):
         self.state = self.g.choice(range(len(self.vector)), 1, p=self.vector)[0]
+
 
 # TODO ATM, generator matrices are hardcoded, they will become parameters to be provided in the future
 

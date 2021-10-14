@@ -37,7 +37,7 @@ def main():
     generators = spawn_generators(10)
 
     # SIMULATION
-    arrivals, waitings, blocks = mm_simulation(generators)
+    arrivals, waitings, blocks = map_ph_simulation(generators)
 
     # GRAPHS
     print_stats(arrivals, waitings, blocks)
