@@ -132,7 +132,8 @@ def map_ph_simulation(generators):
                 arrivals.extend(block_tx)
                 blocks.append(Block(size=effective_b, selection=t))
         elif event_name == 'mining':
-            blocks[-1].mining = t
+            if t > end * 3 / 4:
+                blocks[-1].mining = t
 
     return arrivals, blocks
 
@@ -177,10 +178,13 @@ class MapDoublePh:
         weights[self.map.state] = 0
         weights[-len(self.ph.T) - 1 + self.ph.state] = 0
 
-        # Choosing next event, represented by his index, using their respective probability as a weight
+        total = sum(weights)
+        probabilities = [w/total for w in weights]
+
+        # Choosing next event, represented by his index
         next_event = self.g.choice(range(len(self.map.C) + len(self.map.D) + len(self.ph.T) + 1),
                                    1,
-                                   p=weights)[0]
+                                   p=probabilities)[0]
 
         # Find which event was chosen using his index
         if next_event < len(self.map.C):
