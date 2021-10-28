@@ -21,7 +21,7 @@ def mm_simulation(generators):
         return t + generators[2].exponential(590)
 
     # max number of transactions per block
-    b = 1000
+    b = 150
 
     t = 0
 
@@ -73,6 +73,18 @@ def mm_simulation(generators):
 
 
 def map_ph_simulation(generators):
+    # Pour imiter MM1, on utilise `PI * D = Lambda`.
+    # On divise tous les éléments de D pour obtenir le lambda voulu
+    # Et on corrige C pour maintenir l'égalité PI(C+D) = 0
+    # Choisir paramètres pour faire exploser le système ou non (voir eq. 9)
+    # Pour avoir un système à l'équilibre, voir les leviers d'action (priorité, impatience)
+
+    # TODO fix
+    # TODO compare MM & MAPPH
+    # TODO histogram wait
+    # TODO distrib block size
+    # TODO BONUS voir comment tenir compte de la prio ?
+
     # time of arrival of transactions
     arrivals = []
     # tuples (size, selected, mined)
@@ -204,6 +216,9 @@ class StatefulProcess:
         self.roll_state()
 
     def roll_state(self):
+        """
+        Randomly choose a state according to is probability distribution
+        """
         self.state = self.g.choice(range(len(self.vector)), 1, p=self.vector)[0]
 
 
