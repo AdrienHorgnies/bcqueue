@@ -3,10 +3,6 @@ import numpy as np
 
 
 def mm_simulation(generators):
-    # PARLER du fait que j'ai cherché les paramètres qui correspondent à la réalité.
-
-    # TODO integrate MapDoublePH, and make it easy to choose between M/M/1 and MAP/PH/1
-
     # time of arrival of transactions
     arrivals = []
     # tuples (size, selected, mined)
