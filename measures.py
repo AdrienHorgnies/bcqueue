@@ -19,9 +19,9 @@ def print_stats(arrivals, waitings, blocks):
     average_service = total_service / len(arrivals)
 
     print(f"Number of blocks : {len(blocks)}")
-    print(f"Average number of transactions per block : {len(arrivals) / len(blocks)}")
-    print(f"Average waiting time : {average_waiting}")
-    print(f"Average service time : {average_service}")
+    print(f"Average number of transactions per block : {len(arrivals) / len(blocks):.0f}")
+    print(f"Average waiting time : {average_waiting:.0f}")
+    print(f"Average service time : {average_service:.0f}")
 
 
 def print_graphs(arrivals, waitings, blocks):
