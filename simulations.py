@@ -1,4 +1,5 @@
 from models import Block
+import numpy as np
 
 
 def mm_simulation(generators):
@@ -78,7 +79,6 @@ def map_ph_simulation(generators,
                       T, a
                       ):
     # TODO fix
-    # TODO compare MM & MAPPH
     # TODO histogram wait
     # TODO distrib block size
     # TODO BONUS voir comment tenir compte de la prio ?
@@ -153,7 +153,7 @@ class MapDoublePh:
 
         self.t = 0
 
-        self.map = Map(g, M1=C, M2=D, v=w)
+        self.map = Map(g, C=C, D=D, v=w)
         self.ph = PhaseType(self.g, name='selection', M=S, v=b)
         self.inactive_ph = PhaseType(self.g, name='mining', M=T, v=a)
 
@@ -161,8 +161,8 @@ class MapDoublePh:
         """
         Advance the time of the simulation by one step
         """
-        self.t += self.g.exponential(- (self.map.M1[self.map.state][self.map.state] +
-                                        self.ph.M1[self.ph.state][self.ph.state]))
+        self.t += self.g.exponential(- (self.map.C[self.map.state][self.map.state] +
+                                        self.ph.M[self.ph.state][self.ph.state]))
 
     def next(self):
         """
@@ -173,33 +173,32 @@ class MapDoublePh:
         self.forward()
 
         # Build weight vector by appending correct rows of C, D, M1 and M2
-        weights = (self.map.M1[self.map.state] +
-                   self.map.M1[self.map.state] +
-                   self.ph.M1[self.ph.state] +
-                   [self.ph.M2[self.ph.state]])
-        # weight of current state is zero, replace negative numbers by zero
-        #  I could have excluded these numbers, but it's easier to manipulate the index
-        #  when they're still there
-        weights[self.map.state] = 0
-        weights[-len(self.ph.M1) - 1 + self.ph.state] = 0
+        # TODO reuse array to avoid reallocation, it's always the same size !
+        #  or cache it using map.state, ph.name, ph.state as a key ? Can't do that if matrix are too big
+        weights = np.array(self.map.C[self.map.state] +
+                           self.map.D[self.map.state] +
+                           self.ph.M[self.ph.state] +
+                           [self.ph.v[self.ph.state]])
+        # exclude current state by setting its weight to zero
+        weights[weights < 0] = 0
 
-        total = sum(weights)
-        probabilities = [w / total for w in weights]
+        probabilities = weights / weights.sum()
 
         # Choosing next event, represented by his index
-        next_event = self.g.choice(range(len(self.map.M1) + len(self.map.M1) + len(self.ph.M1) + 1),
+        # TODO store the range, it's always the same size.
+        next_event = self.g.choice(range(len(weights)),
                                    1,
                                    p=probabilities)[0]
 
         # Find which event was chosen using his index
-        if next_event < len(self.map.M1):
+        if next_event < len(self.map.C):
             self.map.state = next_event
             return self.next()
-        elif next_event < len(self.map.M1) + len(self.map.M1):
-            self.map.state = next_event - len(self.map.M1)
+        elif next_event < len(self.map.C) + len(self.map.D):
+            self.map.state = next_event - len(self.map.C)
             return self.t, 'arrival'
         elif next_event < len(weights) - 1:
-            self.ph.state = next_event - len(self.map.M1) - len(self.map.M1)
+            self.ph.state = next_event - len(self.map.C) - len(self.map.C)
             return self.next()
         else:
             try:
@@ -223,7 +222,7 @@ class StatefulProcess:
         assert sum(v) == 1, "A probability vector sum must be 1"
 
         self.g = g
-        self.vector = v
+        self.v = v
         self.state = None
         self.roll_state()
 
@@ -231,19 +230,25 @@ class StatefulProcess:
         """
         Randomly choose a state according to is probability distribution
         """
-        self.state = self.g.choice(range(len(self.vector)), 1, p=self.vector)[0]
+        self.state = self.g.choice(range(len(self.v)), 1, p=self.v)[0]
 
 
 class Map(StatefulProcess):
-    def __init__(self, g, M1, M2, v):
+    def __init__(self, g, C, D, v):
         super().__init__(g, v)
         # TODO make a method to compute v from C and D (find the method in a math lib)
-        self.M1 = M1
-        self.M1 = M2
+        self.C = C
+        self.D = D
+
+    def __str__(self):
+        return "<MAP>"
 
 
 class PhaseType(StatefulProcess):
     def __init__(self, g, M, v, name):
         super().__init__(g, v)
-        self.M1 = M
+        self.M = M
         self.name = name
+
+    def __str__(self):
+        return f"<PH '{self.name}'>"
