@@ -2,6 +2,7 @@
 Orchestrate the simulations and generate the figures presenting the results
 """
 import argparse
+import sys
 
 from numpy.random import SeedSequence, SFC64, Generator
 
@@ -25,7 +26,7 @@ def spawn_generators(n):
 
 def main():
     # ARGUMENTS
-    description = 'Simulate a proof-of-work blockchain system with a MAP/PH/1 queue.'
+    description = 'Simulate a proof-of-work blockchain system with a M/M/1 or MAP/PH/1 queue.'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('seed', nargs='?', type=int, help='seed to initialize the random generator')
     parser.add_argument('--mm1', action='store_true', help='run the simulation with M/M/1 queue')
@@ -45,6 +46,7 @@ def main():
         print('M/M/1 stats:')
         print_stats(arrivals, waitings, blocks)
         print_graphs(arrivals, waitings, blocks)
+
     if args.mapph1:
         arrivals, waitings, blocks = map_ph_simulation(generators,
                                                        C=[[-1.5, 0.5],
@@ -62,6 +64,10 @@ def main():
         print('MAP/PH/1 stats:')
         print_stats(arrivals, waitings, blocks)
         print_graphs(arrivals, waitings, blocks)
+
+    if not (args.mm1 or args.mapph1):
+        print("You didn't select any simulation to run.", file=sys.stderr)
+        parser.print_help()
 
 
 if __name__ == '__main__':
