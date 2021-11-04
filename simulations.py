@@ -72,13 +72,11 @@ def mm_simulation(generators):
     return arrivals, waitings, blocks
 
 
-def map_ph_simulation(generators):
-    # Pour imiter MM1, on utilise `PI * D = Lambda`.
-    # On divise tous les éléments de D pour obtenir le lambda voulu
-    # Et on corrige C pour maintenir l'égalité PI(C+D) = 0
-    # Choisir paramètres pour faire exploser le système ou non (voir eq. 9)
-    # Pour avoir un système à l'équilibre, voir les leviers d'action (priorité, impatience)
-
+def map_ph_simulation(generators,
+                      C, D, w,
+                      S, b,
+                      T, a
+                      ):
     # TODO fix
     # TODO compare MM & MAPPH
     # TODO histogram wait
@@ -90,7 +88,7 @@ def map_ph_simulation(generators):
     # tuples (size, selected, mined)
     blocks = []
 
-    queue = MapDoublePh(generators[0])
+    queue = MapDoublePh(generators[0], C, D, w, S, b, T, a)
 
     # max number of transactions per block
     b = 1000
@@ -124,7 +122,7 @@ def map_ph_simulation(generators):
         elif event_name == 'mining':
             if t > end * 3 / 4 and len(blocks) > 0:
                 blocks[-1].mining = t
-    # CHEATCHODE because I stopped record before end of last block
+    # CHEATCHODE because I stopped recording before end of last block
     blocks[-1].mining = blocks[-1].selection + 1
 
     return arrivals, waiting_sizes, blocks
@@ -137,56 +135,71 @@ class MapDoublePh:
       - Only one is active at a time
       - When the active PhaseType process is absorbed, it is swapped with the other one
     """
-
-    def __init__(self, g):
+    def __init__(self, g,
+                 C, D, w,
+                 S, b,
+                 T, a):
+        """
+        :param g: pseudo random generator
+        :param C: C+D = infinitesimal generator of an irreducible Markov process
+        :param D: C+D = infinitesimal generator of an irreducible Markov process
+        :param w: stationary probability vector of MAP C+D
+        :param S: infinitesimal generator of PH process
+        :param b: stationary probability vector of PH S
+        :param T: infinitesimal generator of PH process
+        :param a: stationary probability vector of PH T
+        """
         self.g = g
 
         self.t = 0
 
-        self.map = Map(g)
-        self.ph = PhaseType(self.g, 'selection')
-        self.inactive_ph = PhaseType(self.g, 'mining')
+        self.map = Map(g, M1=C, M2=D, v=w)
+        self.ph = PhaseType(self.g, name='selection', M=S, v=b)
+        self.inactive_ph = PhaseType(self.g, name='mining', M=T, v=a)
 
     def forward(self):
         """
-        Bring forward the time of the simulation by one step
+        Advance the time of the simulation by one step
         """
-        self.t += self.g.exponential(- (self.map.C[self.map.state][self.map.state] +
-                                        self.ph.T[self.ph.state][self.ph.state]))
+        self.t += self.g.exponential(- (self.map.M1[self.map.state][self.map.state] +
+                                        self.ph.M1[self.ph.state][self.ph.state]))
 
     def next(self):
         """
-        Run the process and return when either MAP or PH was absorbed
+        Advance the time of the simulation until either MAP or PH is absorbed
+
         :return: A tuple of the time and the name of the event
         """
         self.forward()
 
-        # Build weight vector by appending correct rows of C, D, T and t
-        weights = (self.map.C[self.map.state] +
-                   self.map.D[self.map.state] +
-                   self.ph.T[self.ph.state] +
-                   [self.ph.t[self.ph.state]])
-        # replace negative numbers with zero, they're non events
+        # Build weight vector by appending correct rows of C, D, M1 and M2
+        weights = (self.map.M1[self.map.state] +
+                   self.map.M1[self.map.state] +
+                   self.ph.M1[self.ph.state] +
+                   [self.ph.M2[self.ph.state]])
+        # weight of current state is zero, replace negative numbers by zero
+        #  I could have excluded these numbers, but it's easier to manipulate the index
+        #  when they're still there
         weights[self.map.state] = 0
-        weights[-len(self.ph.T) - 1 + self.ph.state] = 0
+        weights[-len(self.ph.M1) - 1 + self.ph.state] = 0
 
         total = sum(weights)
         probabilities = [w / total for w in weights]
 
         # Choosing next event, represented by his index
-        next_event = self.g.choice(range(len(self.map.C) + len(self.map.D) + len(self.ph.T) + 1),
+        next_event = self.g.choice(range(len(self.map.M1) + len(self.map.M1) + len(self.ph.M1) + 1),
                                    1,
                                    p=probabilities)[0]
 
         # Find which event was chosen using his index
-        if next_event < len(self.map.C):
+        if next_event < len(self.map.M1):
             self.map.state = next_event
             return self.next()
-        elif next_event < len(self.map.C) + len(self.map.D):
-            self.map.state = next_event - len(self.map.C)
+        elif next_event < len(self.map.M1) + len(self.map.M1):
+            self.map.state = next_event - len(self.map.M1)
             return self.t, 'arrival'
         elif next_event < len(weights) - 1:
-            self.ph.state = next_event - len(self.map.C) - len(self.map.D)
+            self.ph.state = next_event - len(self.map.M1) - len(self.map.M1)
             return self.next()
         else:
             try:
@@ -198,20 +211,19 @@ class MapDoublePh:
 
 class StatefulProcess:
     """
-    A mathematical object that has a number of states with each of them having a different probably to occur.
-    A state is identified by its index in the probably vector.
+    A mathematical object that has a number of states with each of them having a different stationary probability.
+    A state is identified by its index in the probability vector.
     """
 
-    def __init__(self, g, vector):
+    def __init__(self, g, v):
         """
-
         :param g: A random generator used to simulate random events
-        :param vector: The probably of each state
+        :param v: stationary probability vector of the process
         """
-        assert sum(vector) == 1, "A probably vector sum must be 1"
+        assert sum(v) == 1, "A probability vector sum must be 1"
 
         self.g = g
-        self.vector = vector
+        self.vector = v
         self.state = None
         self.roll_state()
 
@@ -222,26 +234,16 @@ class StatefulProcess:
         self.state = self.g.choice(range(len(self.vector)), 1, p=self.vector)[0]
 
 
-# TODO ATM, generator matrices are hardcoded, they will become parameters to be provided in the future
-
-
 class Map(StatefulProcess):
-    def __init__(self, g):
-        super().__init__(g, [0.3, 0.7])
-        # TODO make a method to compute PI from C and D (must already exist)
-        self.C = [[-1, 0.2],
-                  [0.9, -3]]
-        self.D = [[0.5, 0.3],
-                  [2, 0.1]]
+    def __init__(self, g, M1, M2, v):
+        super().__init__(g, v)
+        # TODO make a method to compute v from C and D (find the method in a math lib)
+        self.M1 = M1
+        self.M1 = M2
 
 
 class PhaseType(StatefulProcess):
-    def __init__(self, g, name):
-        super().__init__(g, [0.1, 0.4, 0.5])
-        self.T = [[-0.2, 0, 0],
-                  [0.1, -0.4, 0],
-                  [1, 0, -2]]
-        self.t = [0.2,
-                  0.3,
-                  1]
+    def __init__(self, g, M, v, name):
+        super().__init__(g, v)
+        self.M1 = M
         self.name = name
