@@ -2,23 +2,23 @@ from models import Block
 import numpy as np
 
 
-def mm_simulation(generators):
+def mm1_simulation(generators, tau, _lambda, mu1, mu2):
     # time of arrival of transactions
     arrivals = []
     # tuples (size, selected, mined)
     blocks = []
 
     def next_arrival():
-        return t + generators[0].exponential(10)
+        return t + generators[0].exponential(_lambda)
 
     def next_selection():
-        return t + generators[1].exponential(10)
+        return t + generators[1].exponential(mu1)
 
     def next_mining():
-        return t + generators[2].exponential(590)
+        return t + generators[2].exponential(mu2)
 
     # max number of transactions per block
-    b = 150
+    b = 1000
 
     t = 0
 
@@ -28,22 +28,19 @@ def mm_simulation(generators):
         'mining': float('inf')
     }
 
-    # Duration to get an average of 1000 blocks
-    end = 50 * 600
-
     # list of txs, identified by their time of arrival
     waiting_tx = []
     block_tx = []
     waitings = []
 
-    while t < end:
+    while t < tau:
         next_event_name = min(scheduler, key=scheduler.get)
         t = scheduler[next_event_name]
 
         if next_event_name == 'arrival':
             waiting_tx.append(t)
             scheduler['arrival'] = next_arrival()
-            if t > end * 3 / 4:
+            if t > tau * 3 / 4:
                 arrivals.append(t)
                 waitings.append(len(waiting_tx))
         elif next_event_name == 'selection':
@@ -57,7 +54,7 @@ def mm_simulation(generators):
             scheduler['selection'] = float('inf')
             scheduler['mining'] = next_mining()
 
-            if t > end * 3 / 4:
+            if t > tau * 3 / 4:
                 blocks.append(Block(size=effective_b, selection=t, mining=scheduler['mining']))
         elif next_event_name == 'mining':
             # put the txs out, set up next selection
@@ -66,10 +63,11 @@ def mm_simulation(generators):
             scheduler['selection'] = next_selection()
             scheduler['mining'] = float('inf')
 
-    return arrivals, waitings, blocks
+    return np.array(arrivals), np.array(waitings), blocks
 
 
 def map_ph_simulation(generators,
+                      tau,
                       C, D, w,
                       S, b,
                       T, a
@@ -91,15 +89,12 @@ def map_ph_simulation(generators,
 
     t = 0
 
-    # Duration to get an average of 1000 blocks
-    end = 1000 * 600
-
     # list of txs, identified by their time of arrival
     waiting_tx = []
 
     waiting_sizes = []
 
-    while t < end:
+    while t < tau:
         t, event_name = queue.next()
 
         if event_name == 'arrival':
@@ -113,12 +108,12 @@ def map_ph_simulation(generators,
             generators[3].shuffle(waiting_tx)
             block_tx, waiting_tx = waiting_tx[:effective_b], waiting_tx[effective_b:]
 
-            if t > end * 3 / 4:
+            if t > tau * 3 / 4:
                 blocks.append(Block(size=effective_b, selection=t))
         elif event_name == 'mining':
-            if t > end * 3 / 4 and len(blocks) > 0:
+            if t > tau * 3 / 4 and len(blocks) > 0:
                 blocks[-1].mining = t
-    # CHEATCHODE because I stopped recording before end of last block
+    # CHEATCHODE because I stopped recording before last block was mined
     blocks[-1].mining = blocks[-1].selection + 1
 
     return arrivals, waiting_sizes, blocks

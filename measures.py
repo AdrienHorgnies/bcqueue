@@ -25,33 +25,12 @@ def print_stats(arrivals, waitings, blocks):
 
 
 def print_graphs(arrivals, waitings, blocks):
-    events = [(t, 'arrival') for t in arrivals] + \
-             [(b.selection, 'selection', b) for b in blocks] + \
-             [(b.mining, 'mining', b) for b in blocks]
-    events.sort()
-    timings = np.zeros(len(events))
-    waiting = np.zeros(len(events))
-    mining = np.zeros(len(events))
-
-    # waiting_size = 0
-    # mining_size = 0
-    # for idx, t in enumerate(events):
-    #     timings[idx] = t[0]
-    #     if t[1] == 'arrival':
-    #         waiting_size += 1
-    #     elif t[1] == 'selection':
-    #         waiting_size -= t[2].size
-    #         mining_size = t[2].size
-    #     elif t[1] == 'mining':
-    #         mining_size = 0
-    #     waiting[idx] = waiting_size
-    #     mining[idx] = mining_size
-
     fig, ax = plt.subplots()
     fig.canvas.manager.set_window_title('Trajectoire')
-    fig.set(label='TEST 1')
 
-    ax.set(xlabel='time', ylabel='waiting queue size', title='Size of the waiting queue through time')
-    ax.plot(arrivals, waitings)
+    arrivals_10min = arrivals / (10 * 600)
+    ax.set(xlabel='time (in 10 minutes units)', ylabel='waiting queue size',
+           title='Size of the waiting queue through time')
+    ax.plot(arrivals_10min, waitings)
 
     plt.show()

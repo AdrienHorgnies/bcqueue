@@ -7,7 +7,7 @@ import sys
 from numpy.random import SeedSequence, SFC64, Generator
 
 from measures import print_stats, print_graphs
-from simulations import mm_simulation, map_ph_simulation
+from simulations import mm1_simulation, map_ph_simulation
 
 SEED_SEQUENCE = SeedSequence()
 
@@ -41,7 +41,10 @@ def main():
     generators = spawn_generators(10)
 
     if args.mm1:
-        arrivals, waitings, blocks = mm_simulation(generators)
+        arrivals, waitings, blocks = mm1_simulation(generators, tau=1000*600,
+                                                    _lambda=0.7,
+                                                    mu1=10,
+                                                    mu2=590)
 
         print('M/M/1 stats:')
         print_stats(arrivals, waitings, blocks)
@@ -49,6 +52,7 @@ def main():
 
     if args.mapph1:
         arrivals, waitings, blocks = map_ph_simulation(generators,
+                                                       tau=1000*600,
                                                        C=[[-1.5, 0.5],
                                                           [0.2, -1.2]],
                                                        D=[[0.5, 0.5],
