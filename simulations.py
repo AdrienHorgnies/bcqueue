@@ -18,7 +18,7 @@ def mm1_simulation(generators, tau, _lambda, mu1, mu2):
         return t + generators[2].exponential(mu2)
 
     # max number of transactions per block
-    b = 1000
+    block_size = 1000
 
     t = 0
 
@@ -45,9 +45,9 @@ def mm1_simulation(generators, tau, _lambda, mu1, mu2):
                 waitings.append(len(waiting_tx))
         elif next_event_name == 'selection':
             # We select b transactions except if there is less than b transactions
-            effective_b = min(len(waiting_tx), b)
+            effective_b = min(len(waiting_tx), block_size)
             # We select b transactions by shuffling the whole list and select the b first transactions
-            # TODO shuffle might not be the most efficient way to randomly select tx
+            # TODO use efficient random sampling algorithm from Knuth.
             generators[3].shuffle(waiting_tx)
             block_tx, waiting_tx = waiting_tx[:effective_b], waiting_tx[effective_b:]
 
@@ -85,7 +85,7 @@ def map_ph_simulation(generators,
     queue = MapDoublePh(generators[0], C, D, w, S, b, T, a)
 
     # max number of transactions per block
-    b = 1000
+    block_size = 1000
 
     t = 0
 
@@ -102,9 +102,9 @@ def map_ph_simulation(generators,
             arrivals.append(t)
             waiting_sizes.append(len(waiting_tx))
         elif event_name == 'selection':
-            # We select b transactions except if there is less than b transactions
-            effective_b = min(len(waiting_tx), b)
-            # We select b transactions by shuffling the whole list and select the b first transactions
+            # We select block_size transactions except if there is less than block_size transactions
+            effective_b = min(len(waiting_tx), block_size)
+            # We select block_size transactions by shuffling the whole list and select the block_size first transactions
             generators[3].shuffle(waiting_tx)
             block_tx, waiting_tx = waiting_tx[:effective_b], waiting_tx[effective_b:]
 

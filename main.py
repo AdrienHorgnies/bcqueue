@@ -41,7 +41,7 @@ def main():
     generators = spawn_generators(10)
 
     if args.mm1:
-        arrivals, waitings, blocks = mm1_simulation(generators, tau=1000*600,
+        arrivals, waitings, blocks = mm1_simulation(generators, tau=1000 * 600,
                                                     _lambda=0.7,
                                                     mu1=10,
                                                     mu2=590)
@@ -51,8 +51,7 @@ def main():
         print_graphs(arrivals, waitings, blocks)
 
     if args.mapph1:
-        arrivals, waitings, blocks = map_ph_simulation(generators,
-                                                       tau=1000*600,
+        arrivals, waitings, blocks = map_ph_simulation(generators, tau=1000 * 600,
                                                        C=[[-1.5, 0.5],
                                                           [0.2, -1.2]],
                                                        D=[[0.5, 0.5],
