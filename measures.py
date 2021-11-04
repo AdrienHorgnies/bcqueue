@@ -48,7 +48,7 @@ def print_graphs(arrivals, waitings, blocks):
     #     mining[idx] = mining_size
 
     fig, ax = plt.subplots()
-    fig.canvas.set_window_title('Trajectoire')
+    fig.canvas.manager.set_window_title('Trajectoire')
     fig.set(label='TEST 1')
 
     ax.set(xlabel='time', ylabel='waiting queue size', title='Size of the waiting queue through time')
