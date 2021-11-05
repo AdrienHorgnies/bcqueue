@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 
 
@@ -28,9 +29,16 @@ def print_graphs(arrivals, waitings, blocks):
     fig, ax = plt.subplots()
     fig.canvas.manager.set_window_title('Trajectoire')
 
-    arrivals_10min = arrivals / (10 * 600)
-    ax.set(xlabel='time (in 10 minutes units)', ylabel='waiting queue size',
+    scale_x = 600
+    ticks_x = ticker.FuncFormatter(lambda x, pos: f"{x/scale_x:g}")
+    ax.xaxis.set_major_formatter(ticks_x)
+
+    scale_y = 1000
+    ticks_y = ticker.FuncFormatter(lambda y, pos: f"{y/scale_y:g}")
+    ax.yaxis.set_major_formatter(ticks_y)
+
+    ax.set(xlabel='time (in 10 minutes units)', ylabel='waiting queue size (in 1000 units)',
            title='Size of the waiting queue through time')
-    ax.plot(arrivals_10min, waitings)
+    ax.plot(arrivals, waitings)
 
     plt.show()
