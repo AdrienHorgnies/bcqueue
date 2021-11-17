@@ -12,23 +12,13 @@ from simulations import mm1_simulation, map_ph_simulation, Map
 SEED_SEQUENCE = SeedSequence()
 
 
-def spawn_generators(n):
-    """
-    Spawn n random generators
-
-    Generators are independent if you spawn less than 2^64 of them and you pull less than 2^64 variates for
-    each generators
-
-    :return: a list of n generators
-    """
-    return [Generator(SFC64(stream)) for stream in SEED_SEQUENCE.spawn(n)]
-
-
 def main():
     # ARGUMENTS
     description = 'Simulate a proof-of-work blockchain system with a M/M/1 or MAP/PH/1 queue.'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('seed', nargs='?', type=int, help='seed to initialize the random generator')
+    parser.add_argument('parameters_dir', type=str,
+                        help='path to directory containing the parameters (README for details)')
+    parser.add_argument('--seed', type=int, help='seed to initialize the random generator')
     parser.add_argument('--mm1', action='store_true', help='run the simulation with M/M/1 queue')
     parser.add_argument('--mapph1', action='store_true', help='run the simulation with MAP/PH/1 queue')
     args = parser.parse_args()
@@ -38,7 +28,7 @@ def main():
     if args.seed:
         SEED_SEQUENCE = SeedSequence(args.seed)
     print('Seed : ', SEED_SEQUENCE.entropy)
-    generators = spawn_generators(10)
+    generators = [Generator(SFC64(stream)) for stream in SEED_SEQUENCE.spawn(10)]
 
     if args.mm1:
         arrivals, waitings, blocks = mm1_simulation(generators, tau=1000 * 600,
@@ -50,62 +40,7 @@ def main():
         print_stats(arrivals, waitings, blocks)
         print_graphs(arrivals, waitings, blocks)
 
-    import numpy as np
     if args.mapph1:
-        g = generators[0]
-
-        C = np.array([
-            [-1.5, +0.5],
-            [+0.2, -1.2]
-        ])
-        D = np.array([
-            [+0.5, +0.5],
-            [+0.5, +0.5]
-        ])
-        p = np.array([0.5, 0.5])
-
-        arrival_rate = np.matmul(np.matmul(p, D), np.ones(2))
-        print(f"arrival rate : {arrival_rate}")
-
-        _map = Map(g,
-                   C=C,
-                   D=D,
-                   v=p
-                   )
-
-        t = 0
-        tau = 10 ** 3
-        print(f"expected number of arrivals : {tau * arrival_rate:.0f}")
-
-        def next_arrival():
-            nonlocal t
-            t += g.exponential(- (_map.C[_map.state][_map.state]))
-
-            weights = np.concatenate((_map.C[_map.state], _map.D[_map.state]))
-            weights[weights < 0] = 0
-            probabilities = weights / weights.sum()
-
-            next_state = g.choice(list(range(len(probabilities))), 1, p=probabilities)[0]
-
-            if next_state < len(_map.C):
-                _map.state = next_state
-                return next_arrival()
-            else:
-                _map.state = next_state - len(_map.C)
-                return t
-
-        tx_count = 0
-
-        _map.roll_state()
-
-        while t < tau:
-            next_arrival()
-
-            tx_count += 1
-
-        print(f"simulated number of arrival : {tx_count}")
-
-        return
         arrivals, waitings, blocks = map_ph_simulation(generators, tau=1000 * 600,
                                                        C=[[-1.5, 0.5],
                                                           [0.2, -1.2]],
