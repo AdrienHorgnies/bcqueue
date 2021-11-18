@@ -27,11 +27,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
     def next_mining():
         return t + generators[2].exponential(mu2)
 
-    # max number of transactions per block
-    block_size = 1000
-
     t = 0
-
     scheduler = {
         'arrival': next_arrival(),
         'selection': next_selection(),
@@ -51,7 +47,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
             scheduler['arrival'] = next_arrival()
         elif next_event_name == 'selection':
             # We select b transactions except if there is less than b transactions
-            effective_b = min(len(waiting_tx), block_size)
+            effective_b = min(len(waiting_tx), b)
             # We select b transactions by shuffling the whole list and select the b first transactions
             # TODO use efficient random sampling algorithm from Knuth.
             generators[3].shuffle(waiting_tx)
