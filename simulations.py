@@ -1,5 +1,4 @@
 import numpy as np
-from sortedcontainers import SortedList
 
 from models import Block
 
@@ -15,7 +14,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
     :return: (arrivals, services, completions, blocks)
     """
     # each measure is a trio (arrival_time, service_beginning_time, completion_time)
-    measures = SortedList()
+    measures = []
     blocks = []
 
     def next_arrival():
@@ -59,14 +58,14 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
         elif next_event_name == 'mining':
             if t > tau / 2:
                 # noinspection PyUnboundLocalVariable
-                measures.update((tx, block.selection, t) for tx in block_tx)
+                measures.extend((tx, block.selection, t) for tx in block_tx)
                 block.mining = t
                 blocks.append(block)
 
             scheduler['selection'] = next_selection()
             scheduler['mining'] = float('inf')
 
-    return *list(zip(*measures)), blocks
+    return *list(zip(*sorted(measures))), blocks
 
 
 def map_ph_simulation(generators,
@@ -93,8 +92,7 @@ def map_ph_simulation(generators,
     # TODO BONUS voir comment tenir compte de la prio ?
 
     # time of arrival of transactions
-    arrivals = []
-    # tuples (size, selected, mined)
+    measures = SortedList()
     blocks = []
 
     queue = MapDoublePh(generators[0], C, D, omega, S, beta, T, alpha)
@@ -111,7 +109,7 @@ def map_ph_simulation(generators,
 
         if event_name == 'arrival':
             waiting_tx.append(t)
-            arrivals.append(t)
+            measures.append(t)
             waiting_sizes.append(len(waiting_tx))
         elif event_name == 'selection':
             # We select as many tx as possible, but at most b
@@ -128,7 +126,7 @@ def map_ph_simulation(generators,
     # CHEATCHODE because I stopped recording before last block was mined
     blocks[-1].mining = blocks[-1].selection + 1
 
-    return arrivals, waiting_sizes, blocks
+    return measures, waiting_sizes, blocks
 
 
 class MapDoublePh:

@@ -68,7 +68,7 @@ def main():
                  'mu1.csv', 'mu2.csv']:
         assert parameters_dir.joinpath(name).exists(), f"File '{name}' should exist."
 
-    b = csv_to_vector(parameters_dir.joinpath('b.csv'))
+    b = int(csv_to_num(parameters_dir.joinpath('b.csv')))
     tau = csv_to_num(parameters_dir.joinpath('tau.csv'))
 
     C = csv_to_matrix(parameters_dir.joinpath('C.csv'))
@@ -99,7 +99,7 @@ def main():
         arrivals, services, completions, blocks = results
 
         print('M/M/1 stats:')
-        print_stats(arrivals, services, completions, blocks)
+        print_stats(arrivals, services, completions, blocks, tau)
         print_graphs(arrivals, services, completions, blocks)
 
     if args.mapph1:
