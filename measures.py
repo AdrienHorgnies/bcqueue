@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-from sortedcontainers import SortedList
 
 
 def print_stats(arrivals, services, completions, blocks):
@@ -23,14 +22,14 @@ def print_graphs(arrivals, services, completions, blocks):
     waiting_room = np.zeros(len(arrivals) + len(blocks))
 
     # we need to replay the arrivals and blocks to evaluate the waiting room size
-    deltas = list(zip(arrivals, np.ones(len(arrivals)))) + [(b.selection, -b.size) for b in blocks]
-    deltas.sort()
+    zipped_deltas = list(zip(arrivals, np.ones(len(arrivals)))) + [(b.selection, -b.size) for b in blocks]
+    zipped_deltas.sort()
+    timings, deltas = zip(*zipped_deltas)
 
     count = 0
-    for idx, (_, delta) in enumerate(deltas):
+    for idx, delta in enumerate(deltas):
         count += delta
         waiting_room[idx] = count
-    waiting_room_timings = [t for t, d in deltas]
 
     fig, ax = plt.subplots()
     fig.canvas.manager.set_window_title('Trajectoire')
@@ -43,8 +42,8 @@ def print_graphs(arrivals, services, completions, blocks):
     ticks_y = ticker.FuncFormatter(lambda y, pos: f"{y / scale_y:g}")
     ax.yaxis.set_major_formatter(ticks_y)
 
-    ax.set(xlabel='time (in 10 minutes units)', ylabel='waiting queue size (in 1000 units)',
-           title='Size of the waiting queue through time')
-    ax.plot(waiting_room_timings, waiting_room)
+    ax.set(xlabel='Temps (par 600)', ylabel='(Taille de la file (par 1000))',
+           title="Trajectoire du la taille de la file d'attente.")
+    ax.plot(timings, waiting_room)
 
     plt.show()
