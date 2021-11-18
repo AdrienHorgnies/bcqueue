@@ -45,7 +45,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
             waiting_tx.append(t)
             scheduler['arrival'] = next_arrival()
         elif next_event_name == 'selection':
-            # We select b transactions except if there is less than b transactions
+            # We select as many tx as possible, but at most b
             effective_b = min(len(waiting_tx), b)
             # We select b transactions by shuffling the whole list and select the b first transactions
             # TODO use efficient random sampling algorithm from Knuth.
@@ -86,47 +86,41 @@ def map_ph_simulation(generators,
     :param T: Generating matrix for PH (mining)
     :param alpha: Absorbing transitions probability vector for PH (mining)
     """
-    # TODO fix
     # TODO histogram wait
     # TODO distrib block size
     # TODO BONUS voir comment tenir compte de la prio ?
 
     # time of arrival of transactions
-    measures = SortedList()
+    measures = []
     blocks = []
 
-    queue = MapDoublePh(generators[0], C, D, omega, S, beta, T, alpha)
+    queue = MapDoublePh(generators[5], C, D, omega, S, beta, T, alpha)
 
     t = 0
 
     # list of txs, identified by their time of arrival
     waiting_tx = []
 
-    waiting_sizes = []
-
     while t < tau:
         t, event_name = queue.next()
 
         if event_name == 'arrival':
             waiting_tx.append(t)
-            measures.append(t)
-            waiting_sizes.append(len(waiting_tx))
         elif event_name == 'selection':
             # We select as many tx as possible, but at most b
             effective_b = min(len(waiting_tx), b)
-            # We select block_size transactions by shuffling the whole list and select the block_size first transactions
-            generators[3].shuffle(waiting_tx)
+            # We select b transactions by shuffling the whole list and select the b first transactions
+            generators[6].shuffle(waiting_tx)
             block_tx, waiting_tx = waiting_tx[:effective_b], waiting_tx[effective_b:]
 
-            if t > tau * 3 / 4:
-                blocks.append(Block(size=effective_b, selection=t))
-        elif event_name == 'mining':
-            if t > tau * 3 / 4 and len(blocks) > 0:
-                blocks[-1].mining = t
-    # CHEATCHODE because I stopped recording before last block was mined
-    blocks[-1].mining = blocks[-1].selection + 1
+            block = Block(size=effective_b, selection=t)
+        elif event_name == 'mining' and t > tau / 2:
+            # noinspection PyUnboundLocalVariable
+            measures.extend((tx, block.selection, t) for tx in block_tx)
+            block.mining = t
+            blocks.append(block)
 
-    return measures, waiting_sizes, blocks
+    return *list(zip(*sorted(measures))), blocks
 
 
 class MapDoublePh:
@@ -165,8 +159,8 @@ class MapDoublePh:
         """
         Advance the time of the simulation by one step
         """
-        self.t += self.g.exponential(- (self.map.C[self.map.state][self.map.state] +
-                                        self.ph.M[self.ph.state][self.ph.state]))
+        self.t += self.g.exponential(1 / - (self.map.C[self.map.state][self.map.state] +
+                                            self.ph.M[self.ph.state][self.ph.state]))
 
     def next(self):
         """
@@ -178,7 +172,7 @@ class MapDoublePh:
 
         # Build weight vector by appending correct rows of C, D, M1 and M2
         # TODO reuse array to avoid reallocation, it's always the same size !
-        #  or cache it using map.state, ph.name, ph.state as a key ? Can't do that if matrix are too big
+        #  or cache it using map.state, ph.name, ph.state as a key ? Can't do that if matrices are too big
         weights = np.array(self.map.C[self.map.state] +
                            self.map.D[self.map.state] +
                            self.ph.M[self.ph.state] +
@@ -229,7 +223,7 @@ class StatefulProcess:
 
     def roll_state(self):
         """
-        Randomly choose a state according to is probability distribution
+        Randomly choose a state according to its probability distribution
         """
         self.state = self.g.choice(range(len(self.v)), 1, p=self.v)[0]
 

@@ -14,7 +14,7 @@ from simulations import mm1_simulation, map_ph_simulation
 SEED_SEQUENCE = SeedSequence()
 
 
-def csv_to_matrix(path):
+def matrix_from(path):
     matrix = []
     with open(path) as file:
         reader = csv.reader(file)
@@ -35,18 +35,22 @@ def csv_to_matrix(path):
     return matrix
 
 
-def csv_to_vector(path):
+def vector_from(path):
     with open(path) as file:
         reader = csv.reader(file)
         vector = next(reader)
         return [float(el.replace(' ', '')) for el in vector]
 
 
-def csv_to_num(path):
+def float_from(path):
     with open(path) as file:
         reader = csv.reader(file)
         line = next(reader)
         return float(line[0].replace(' ', ''))
+
+
+def int_from(path):
+    return int(float_from(path))
 
 
 def main():
@@ -61,30 +65,7 @@ def main():
     args = parser.parse_args()
 
     # Parsing parameters from file system
-    parameters_dir = Path(args.parameters_dir)
-    assert parameters_dir.exists(), f"Directory '{parameters_dir}' should exist."
-    assert parameters_dir.is_dir(), f"Directory '{parameters_dir}' should be a directory."
-    for name in ['C.csv', 'omega.csv', 'S.csv', 'beta.csv', 'T.csv', 'alpha.csv', 'b.csv', 'tau.csv', 'lambda.csv',
-                 'mu1.csv', 'mu2.csv']:
-        assert parameters_dir.joinpath(name).exists(), f"File '{name}' should exist."
-
-    b = int(csv_to_num(parameters_dir.joinpath('b.csv')))
-    tau = csv_to_num(parameters_dir.joinpath('tau.csv'))
-
-    C = csv_to_matrix(parameters_dir.joinpath('C.csv'))
-    D = csv_to_matrix(parameters_dir.joinpath('D.csv'))
-    omega = csv_to_vector(parameters_dir.joinpath('omega.csv'))
-    assert len(C) == len(D) == len(omega), "C, D and omega must have the same size!"
-    S = csv_to_vector(parameters_dir.joinpath('S.csv'))
-    beta = csv_to_vector(parameters_dir.joinpath('beta.csv'))
-    assert len(S) == len(beta), "S and beta must have the same size!"
-    T = csv_to_vector(parameters_dir.joinpath('T.csv'))
-    alpha = csv_to_vector(parameters_dir.joinpath('alpha.csv'))
-    assert len(T) == len(alpha), "S and beta must have the same size!"
-
-    _lambda = csv_to_num(parameters_dir.joinpath('lambda.csv'))
-    mu1 = csv_to_num(parameters_dir.joinpath('mu1.csv'))
-    mu2 = csv_to_num(parameters_dir.joinpath('mu2.csv'))
+    C, D, S, T, _lambda, alpha, b, beta, mu1, mu2, omega, tau = parse_files(args)
 
     # Initiating pseudo random generator
     global SEED_SEQUENCE
@@ -104,15 +85,40 @@ def main():
 
     if args.mapph1:
         results = map_ph_simulation(generators, b=b, tau=tau, C=C, D=D, omega=omega, S=S, beta=beta, T=T, alpha=alpha)
-        arrivals, waitings, blocks = results
+        arrivals, services, completions, blocks = results
 
         print('MAP/PH/1 stats:')
-        print_stats(arrivals, waitings, blocks)
-        print_graphs(arrivals, waitings, blocks)
+        print_stats(arrivals, services, completions, blocks, tau)
+        print_graphs(arrivals, services, completions, blocks)
 
     if not (args.mm1 or args.mapph1):
         print("You didn't select any simulation to run.", file=sys.stderr)
         parser.print_help()
+
+
+def parse_files(args):
+    parameters_dir = Path(args.parameters_dir)
+    assert parameters_dir.exists(), f"Directory '{parameters_dir}' should exist."
+    assert parameters_dir.is_dir(), f"Directory '{parameters_dir}' should be a directory."
+    for name in ['C.csv', 'omega.csv', 'S.csv', 'beta.csv', 'T.csv', 'alpha.csv', 'b.csv', 'tau.csv', 'lambda.csv',
+                 'mu1.csv', 'mu2.csv']:
+        assert parameters_dir.joinpath(name).exists(), f"File '{name}' should exist."
+    b = int_from(parameters_dir.joinpath('b.csv'))
+    tau = float_from(parameters_dir.joinpath('tau.csv'))
+    C = matrix_from(parameters_dir.joinpath('C.csv'))
+    D = matrix_from(parameters_dir.joinpath('D.csv'))
+    omega = vector_from(parameters_dir.joinpath('omega.csv'))
+    assert len(C) == len(D) == len(omega), "C, D and omega must have the same size!"
+    S = matrix_from(parameters_dir.joinpath('S.csv'))
+    beta = vector_from(parameters_dir.joinpath('beta.csv'))
+    assert len(S) == len(beta), "S and beta must have the same size!"
+    T = matrix_from(parameters_dir.joinpath('T.csv'))
+    alpha = vector_from(parameters_dir.joinpath('alpha.csv'))
+    assert len(T) == len(alpha), "S and beta must have the same size!"
+    _lambda = float_from(parameters_dir.joinpath('lambda.csv'))
+    mu1 = float_from(parameters_dir.joinpath('mu1.csv'))
+    mu2 = float_from(parameters_dir.joinpath('mu2.csv'))
+    return C, D, S, T, _lambda, alpha, b, beta, mu1, mu2, omega, tau
 
 
 if __name__ == '__main__':

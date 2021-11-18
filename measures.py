@@ -47,7 +47,7 @@ def print_graphs(arrivals, services, completions, blocks):
     ticks_y = ticker.FuncFormatter(lambda y, pos: f"{y / scale_y:g}")
     ax.yaxis.set_major_formatter(ticks_y)
 
-    ax.set(xlabel='Temps (par 600)', ylabel='(Taille de la file (par 1000))',
+    ax.set(xlabel='Temps (par 600)', ylabel='Taille de la file (par 1000)',
            title="Trajectoire du la taille de la file d'attente.")
     ax.plot(timings, waiting_room)
 
