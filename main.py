@@ -95,11 +95,12 @@ def main():
 
     # Simulations
     if args.mm1:
-        arrivals, waitings, blocks = mm1_simulation(generators, b=b, tau=tau, _lambda=_lambda, mu1=mu1, mu2=mu2)
+        results = mm1_simulation(generators, b=b, tau=tau, _lambda=_lambda, mu1=mu1, mu2=mu2)
+        arrivals, services, completions, blocks = results
 
         print('M/M/1 stats:')
-        print_stats(arrivals, waitings, blocks)
-        print_graphs(arrivals, waitings, blocks)
+        print_stats(arrivals, services, completions, blocks)
+        print_graphs(arrivals, services, completions, blocks)
 
     if args.mapph1:
         results = map_ph_simulation(generators, b=b, tau=tau, C=C, D=D, omega=omega, S=S, beta=beta, T=T, alpha=alpha)

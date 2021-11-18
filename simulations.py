@@ -1,5 +1,7 @@
-from models import Block
 import numpy as np
+from sortedcontainers import SortedList
+
+from models import Block
 
 
 def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
@@ -10,10 +12,10 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
     :param _lambda: Average inter-arrival time
     :param mu1: Average service time (selection)
     :param mu2: Average service time (mining)
+    :return: (arrivals, services, completions, blocks)
     """
-    # time of arrival of transactions
-    arrivals = []
-    # tuples (size, selected, mined)
+    # each measure is a trio (arrival_time, service_beginning_time, completion_time)
+    measures = SortedList()
     blocks = []
 
     def next_arrival():
@@ -39,7 +41,6 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
     # list of txs, identified by their time of arrival
     waiting_tx = []
     block_tx = []
-    waitings = []
 
     while t < tau:
         next_event_name = min(scheduler, key=scheduler.get)
@@ -48,9 +49,6 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
         if next_event_name == 'arrival':
             waiting_tx.append(t)
             scheduler['arrival'] = next_arrival()
-            if t > tau * 3 / 4:
-                arrivals.append(t)
-                waitings.append(len(waiting_tx))
         elif next_event_name == 'selection':
             # We select b transactions except if there is less than b transactions
             effective_b = min(len(waiting_tx), block_size)
@@ -61,17 +59,18 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
 
             scheduler['selection'] = float('inf')
             scheduler['mining'] = next_mining()
-
-            if t > tau * 3 / 4:
-                blocks.append(Block(size=effective_b, selection=t, mining=scheduler['mining']))
+            block = Block(size=effective_b, selection=t)
         elif next_event_name == 'mining':
-            # put the txs out, set up next selection
-            block_tx = []
+            if t > tau / 2:
+                # noinspection PyUnboundLocalVariable
+                measures.update((tx, block.selection, t) for tx in block_tx)
+                block.mining = t
+                blocks.append(block)
 
             scheduler['selection'] = next_selection()
             scheduler['mining'] = float('inf')
 
-    return np.array(arrivals), np.array(waitings), blocks
+    return *list(zip(*measures)), blocks
 
 
 def map_ph_simulation(generators,
