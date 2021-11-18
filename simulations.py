@@ -143,27 +143,30 @@ class MapDoublePh:
       - Only one is active at a time
       - When the active PhaseType process is absorbed, it is swapped with the other one
     """
-    def __init__(self, g,
-                 C, D, w,
-                 S, b,
-                 T, a):
+
+    def __init__(self, generators,
+                 C, D, omega,
+                 S, beta,
+                 T, alpha):
         """
-        :param g: pseudo random generator
+        :param generators: pseudo random generator
         :param C: C+D = infinitesimal generator of an irreducible Markov process
         :param D: C+D = infinitesimal generator of an irreducible Markov process
-        :param w: stationary probability vector of MAP C+D
-        :param S: infinitesimal generator of PH process
-        :param b: stationary probability vector of PH S
-        :param T: infinitesimal generator of PH process
-        :param a: stationary probability vector of PH T
+        :param omega: stationary probability vector of MAP C+D
+        :param S: infinitesimal generator of PH process (selection)
+        :param beta: stationary probability vector of PH (selection)
+        :param T: infinitesimal generator of PH process (mining)
+        :param alpha: stationary probability vector of PH T (mining)
         """
-        self.g = g
+        self.g = generators
 
         self.t = 0
 
-        self.map = Map(g, C=C, D=D, v=w)
-        self.ph = PhaseType(self.g, name='selection', M=S, v=b)
-        self.inactive_ph = PhaseType(self.g, name='mining', M=T, v=a)
+        self.map = Map(generators, C=C, D=D, v=omega)
+        self.ph = PhaseType(self.g, name='selection', M=S, v=beta)
+        self.inactive_ph = PhaseType(self.g, name='mining', M=T, v=alpha)
+
+        self.range = list(range(len(C) + len(D) + len(S) + 1))
 
     def forward(self):
         """
@@ -193,10 +196,7 @@ class MapDoublePh:
         probabilities = weights / weights.sum()
 
         # Choosing next event, represented by his index
-        # TODO store the range, it's always the same size.
-        next_event = self.g.choice(range(len(weights)),
-                                   1,
-                                   p=probabilities)[0]
+        next_event = self.g.choice(self.range, 1, p=probabilities)[0]
 
         # Find which event was chosen using his index
         if next_event < len(self.map.C):
