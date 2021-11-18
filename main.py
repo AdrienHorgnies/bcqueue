@@ -50,7 +50,7 @@ def csv_to_num(path):
 
 
 def main():
-    # ARGUMENTS
+    # CLI ARGUMENTS
     description = 'Simulate a proof-of-work blockchain system with a M/M/1 or MAP/PH/1 queue.'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('parameters_dir', nargs='?', type=str, default='parameters',
@@ -60,6 +60,7 @@ def main():
     parser.add_argument('--mapph1', action='store_true', help='run the simulation with MAP/PH/1 queue')
     args = parser.parse_args()
 
+    # Parsing parameters from file system
     parameters_dir = Path(args.parameters_dir)
     assert parameters_dir.exists(), f"Directory '{parameters_dir}' should exist."
     assert parameters_dir.is_dir(), f"Directory '{parameters_dir}' should be a directory."
@@ -85,13 +86,14 @@ def main():
     mu1 = csv_to_num(parameters_dir.joinpath('mu1.csv'))
     mu2 = csv_to_num(parameters_dir.joinpath('mu2.csv'))
 
-    # SETUP
+    # Initiating pseudo random generator
     global SEED_SEQUENCE
     if args.seed:
         SEED_SEQUENCE = SeedSequence(args.seed)
     print('Seed : ', SEED_SEQUENCE.entropy)
     generators = [Generator(SFC64(stream)) for stream in SEED_SEQUENCE.spawn(10)]
 
+    # Simulations
     if args.mm1:
         arrivals, waitings, blocks = mm1_simulation(generators, b=b, tau=tau, _lambda=_lambda, mu1=mu1, mu2=mu2)
 
