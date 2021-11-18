@@ -93,14 +93,14 @@ def main():
     generators = [Generator(SFC64(stream)) for stream in SEED_SEQUENCE.spawn(10)]
 
     if args.mm1:
-        arrivals, waitings, blocks = mm1_simulation(generators, tau=tau, _lambda=_lambda, mu1=mu1, mu2=mu2)
+        arrivals, waitings, blocks = mm1_simulation(generators, b=b, tau=tau, _lambda=_lambda, mu1=mu1, mu2=mu2)
 
         print('M/M/1 stats:')
         print_stats(arrivals, waitings, blocks)
         print_graphs(arrivals, waitings, blocks)
 
     if args.mapph1:
-        results = map_ph_simulation(generators, tau=tau, C=C, D=D, w=omega, S=S, b=beta, T=T, a=alpha)
+        results = map_ph_simulation(generators, b=b, tau=tau, C=C, D=D, omega=omega, S=S, beta=beta, T=T, alpha=alpha)
         arrivals, waitings, blocks = results
 
         print('MAP/PH/1 stats:')

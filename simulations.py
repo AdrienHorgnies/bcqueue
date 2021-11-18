@@ -2,7 +2,15 @@ from models import Block
 import numpy as np
 
 
-def mm1_simulation(generators, tau, _lambda, mu1, mu2):
+def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
+    """
+    :param generators: Pseudo random generators
+    :param b: Max number of transactions per block
+    :param tau: End time of the simulation
+    :param _lambda: Average interarrival time
+    :param mu1: Average service time (selection)
+    :param mu2: Average service time (mining)
+    """
     # time of arrival of transactions
     arrivals = []
     # tuples (size, selected, mined)
@@ -67,11 +75,23 @@ def mm1_simulation(generators, tau, _lambda, mu1, mu2):
 
 
 def map_ph_simulation(generators,
-                      tau,
-                      C, D, w,
-                      S, b,
-                      T, a
+                      b, tau,
+                      C, D, omega,
+                      S, beta,
+                      T, alpha
                       ):
+    """
+    :param generators: Pseudo random generators
+    :param b: Max number of transactions per block
+    :param tau: End time of the simulation
+    :param C: Generating matrix for MAP (non absorbing)
+    :param D: Generating matrix for MAP (absorbing)
+    :param omega: Stationary probability vector for MAP
+    :param S: Generating matrix for PH (selection)
+    :param beta: Absorbing transitions probability vector for PH (selection)
+    :param T: Generating matrix for PH (mining)
+    :param alpha: Absorbing transitions probability vector for PH (mining)
+    """
     # TODO fix
     # TODO histogram wait
     # TODO distrib block size
@@ -82,10 +102,7 @@ def map_ph_simulation(generators,
     # tuples (size, selected, mined)
     blocks = []
 
-    queue = MapDoublePh(generators[0], C, D, w, S, b, T, a)
-
-    # max number of transactions per block
-    block_size = 1000
+    queue = MapDoublePh(generators[0], C, D, omega, S, beta, T, alpha)
 
     t = 0
 
@@ -102,8 +119,8 @@ def map_ph_simulation(generators,
             arrivals.append(t)
             waiting_sizes.append(len(waiting_tx))
         elif event_name == 'selection':
-            # We select block_size transactions except if there is less than block_size transactions
-            effective_b = min(len(waiting_tx), block_size)
+            # We select as many tx as possible, but at most b
+            effective_b = min(len(waiting_tx), b)
             # We select block_size transactions by shuffling the whole list and select the block_size first transactions
             generators[3].shuffle(waiting_tx)
             block_tx, waiting_tx = waiting_tx[:effective_b], waiting_tx[effective_b:]
