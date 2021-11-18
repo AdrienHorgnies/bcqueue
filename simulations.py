@@ -7,7 +7,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
     :param generators: Pseudo random generators
     :param b: Max number of transactions per block
     :param tau: End time of the simulation
-    :param _lambda: Average interarrival time
+    :param _lambda: Average inter-arrival time
     :param mu1: Average service time (selection)
     :param mu2: Average service time (mining)
     """
