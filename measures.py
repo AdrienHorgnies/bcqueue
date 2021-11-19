@@ -22,7 +22,7 @@ def print_stats(arrivals, services, completions, blocks, tau):
     print(f"Average inter-mining time : {tau / 2 / len(blocks)}")
 
 
-def print_graphs(arrivals, services, completions, blocks):
+def print_graphs(arrivals, services, completions, blocks, queue_name):
     arrivals = np.array(arrivals)
     services = np.array(services)
     block_times = np.array([b.mining for b in blocks])
@@ -41,7 +41,7 @@ def print_graphs(arrivals, services, completions, blocks):
 
     # TRAJECTOIRE
     fig, ax = plt.subplots()
-    fig.canvas.manager.set_window_title('Trajectoire')
+    fig.canvas.manager.set_window_title(f'Trajectoire {queue_name}')
 
     scale_x = 600
     ticks_x = ticker.FuncFormatter(lambda x, pos: f"{x / scale_x:g}")
@@ -59,7 +59,7 @@ def print_graphs(arrivals, services, completions, blocks):
     waiting_times = services - arrivals
 
     fig, ax = plt.subplots()
-    fig.canvas.manager.set_window_title("Temps d'attente")
+    fig.canvas.manager.set_window_title(f"Temps d'attente {queue_name}")
 
     ax.set(xlabel="Temps d'attente", ylabel='Nombre de transaction',
            title="Histogramme du temps d'attente des transactions")
@@ -69,7 +69,7 @@ def print_graphs(arrivals, services, completions, blocks):
     service_durations = completions - services
 
     fig, ax = plt.subplots()
-    fig.canvas.manager.set_window_title("Temps de service")
+    fig.canvas.manager.set_window_title(f"Temps de service {queue_name}")
 
     ax.set(xlabel="Temps de service", ylabel='Nombre de transactions',
            title="Histogramme du temps de service")
@@ -79,7 +79,7 @@ def print_graphs(arrivals, services, completions, blocks):
     inter_block_times = block_times[1:] - block_times[:-1]
 
     fig, ax = plt.subplots()
-    fig.canvas.manager.set_window_title("Temps de service")
+    fig.canvas.manager.set_window_title(f"Temps de bloc {queue_name}")
 
     ax.set(xlabel="Temps de bloc", ylabel='Nombre de blocs',
            title="Histogramme du temps de bloc")
@@ -89,10 +89,8 @@ def print_graphs(arrivals, services, completions, blocks):
     inter_arrival_times = arrivals[1:] - arrivals[:-1]
 
     fig, ax = plt.subplots()
-    fig.canvas.manager.set_window_title("Temps inter-arrivées")
+    fig.canvas.manager.set_window_title(f"Temps inter-arrivées {queue_name}")
 
     ax.set(xlabel="Temps inter-arrivées", ylabel='Nombre de transactions',
            title="Histogramme du temps inter-arrivées")
     ax.hist(inter_arrival_times, bins='auto')
-
-    plt.show()
