@@ -24,6 +24,9 @@ def print_stats(arrivals, services, completions, blocks, tau):
 
 def print_graphs(arrivals, services, completions, blocks):
     arrivals = np.array(arrivals)
+    services = np.array(services)
+    block_times = np.array([b.mining for b in blocks])
+
     waiting_room = np.zeros(len(arrivals) + len(blocks))
 
     # we need to replay the arrivals and blocks to evaluate the waiting room size
@@ -36,6 +39,7 @@ def print_graphs(arrivals, services, completions, blocks):
         count += delta
         waiting_room[idx] = count
 
+    # TRAJECTOIRE
     fig, ax = plt.subplots()
     fig.canvas.manager.set_window_title('Trajectoire')
 
@@ -50,5 +54,45 @@ def print_graphs(arrivals, services, completions, blocks):
     ax.set(xlabel='Temps (par 600)', ylabel='Taille de la file (par 1000)',
            title="Trajectoire du la taille de la file d'attente.")
     ax.plot(timings, waiting_room)
+
+    # TEMPS D ATTENTE
+    waiting_times = services - arrivals
+
+    fig, ax = plt.subplots()
+    fig.canvas.manager.set_window_title("Temps d'attente")
+
+    ax.set(xlabel="Temps d'attente", ylabel='Nombre de transaction',
+           title="Histogramme du temps d'attente des transactions")
+    ax.hist(waiting_times, bins='auto')
+
+    # TEMPS DE SERVICE
+    service_durations = completions - services
+
+    fig, ax = plt.subplots()
+    fig.canvas.manager.set_window_title("Temps de service")
+
+    ax.set(xlabel="Temps de service", ylabel='Nombre de transactions',
+           title="Histogramme du temps de service")
+    ax.hist(service_durations, bins='auto')
+
+    # TEMPS DE BLOC
+    inter_block_times = block_times[1:] - block_times[:-1]
+
+    fig, ax = plt.subplots()
+    fig.canvas.manager.set_window_title("Temps de service")
+
+    ax.set(xlabel="Temps de bloc", ylabel='Nombre de blocs',
+           title="Histogramme du temps de bloc")
+    ax.hist(inter_block_times, bins='auto')
+
+    # TEMPS INTER ARRIVEES
+    inter_arrival_times = arrivals[1:] - arrivals[:-1]
+
+    fig, ax = plt.subplots()
+    fig.canvas.manager.set_window_title("Temps inter-arrivées")
+
+    ax.set(xlabel="Temps inter-arrivées", ylabel='Nombre de transactions',
+           title="Histogramme du temps inter-arrivées")
+    ax.hist(inter_arrival_times, bins='auto')
 
     plt.show()

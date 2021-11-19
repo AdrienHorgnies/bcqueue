@@ -86,8 +86,6 @@ def map_ph_simulation(generators,
     :param T: Generating matrix for PH (mining)
     :param alpha: Absorbing transitions probability vector for PH (mining)
     """
-    # TODO histogram wait
-    # TODO distrib block size
     # TODO BONUS voir comment tenir compte de la prio ?
 
     # time of arrival of transactions
