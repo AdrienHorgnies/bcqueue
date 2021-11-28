@@ -91,19 +91,5 @@ def inter_arrival_time(arrivals, ax):
 
 
 @Graph("Trajectoire de la fil d'attente", ylabel="Nombre de transactions", xlabel="Temps")
-def trajectory(arrivals, blocks, ax):
-    # we need to replay the arrivals and blocks to evaluate the waiting room size
-    arrival_deltas = list(zip(arrivals, np.ones(len(arrivals))))
-    blocks_deltas = [(b.selection, -b.size) for b in blocks]
-    zipped_deltas = arrival_deltas + blocks_deltas
-    zipped_deltas.sort()
-    timings, deltas = zip(*zipped_deltas)
-
-    waiting_room = np.zeros(len(arrivals) + len(blocks))
-
-    count = 0
-    for idx, delta in enumerate(deltas):
-        count += delta
-        waiting_room[idx] = count
-
-    ax.plot(timings, waiting_room)
+def trajectory(room_times, room_sizes, ax):
+    ax.plot(room_times, room_sizes)

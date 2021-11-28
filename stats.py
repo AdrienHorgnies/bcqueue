@@ -26,9 +26,13 @@ def print_stats(transactions, blocks, room_states):
     stats['room_times'] = np.array([s.t for s in room_states])
     stats['room_sizes'] = np.array([s.size for s in room_states], dtype=int)
 
+    no_selection = np.isnan(stats['services']).sum()
+    no_mining = np.isnan(stats['completions']).sum()
+
     print(f"""
-    Percentage of non selected transactions : {np.isnan(stats['services']).sum() / len(stats['services']):.3%}
-    Percentage of non mined transactions : {np.isnan(stats['completions']).sum() / len(stats['completions']):.3%}
+    All transactions : {len(transactions)} (100%)
+    Non selected transactions : {no_selection} ({no_selection / len(stats['services']):.3%})
+    Non mined transactions : {no_mining} ({no_mining / len(stats['completions']):.3%})
     
     Average sojourn duration : {np.nanmean(stats['sojourn_durations']):.0f}
     Average waiting duration : {np.nanmean(stats['waiting_durations']):.0f}
@@ -37,7 +41,7 @@ def print_stats(transactions, blocks, room_states):
     Average block time : {stats['inter_block_times'].mean():.0f}
     Average block size: {stats['block_sizes'].mean():.0f}
     
-    Average waiting room size: {stats['room_sizes'].mean():0f}
+    Average waiting room size: {stats['room_sizes'].mean():.0f}
 
     Average inter-arrival times : {stats['inter_arrival_times'].mean():.3f}    
     """)

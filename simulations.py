@@ -3,20 +3,20 @@ import numpy as np
 from models import Block, Tx, RoomState
 
 
-def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
+def mm1_simulation(generators, b, sigma, tau, upsilon, _lambda, mu1, mu2, **p):
     """
     Simulate the blockchain system with a M/M/1 queue
 
     :param generators: Pseudo random generators
     :param b: Max number of transactions per block
-    :param tau: End time of the simulation
+    :param sigma: Start time of the recording of measures
+    :param tau: End time of the recording of new measures
+    :param upsilon: Extra time after tau to complete existing measures
     :param _lambda: Expected inter-arrival time
     :param mu1: Expected selection duration
     :param mu2: Expected mining duration
     :return: dict containing transactions, blocks, room_sizes and queue parameters
     """
-    expected_block_time = mu1 + mu2
-
     transactions = []
     blocks = []
     room_states = []
@@ -41,7 +41,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
     server_room = []
     block = None
 
-    while t < tau + 0 * expected_block_time:
+    while t < tau + upsilon:
         next_event_name = min(scheduler, key=scheduler.get)
         t = scheduler[next_event_name]
 
@@ -50,7 +50,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
             waiting_room.append(tx)
             scheduler['arrival'] = next_arrival()
 
-            if tau / 2 <= t < tau:
+            if sigma <= t < tau:
                 transactions.append(tx)
                 room_states.append(RoomState(t=t, size=len(waiting_room)))
         elif next_event_name == 'selection':
@@ -68,7 +68,7 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
             scheduler['mining'] = next_mining()
             block = Block(selection=t, size=effective_b)
 
-            if tau / 2 <= t < tau:
+            if sigma <= t < tau:
                 blocks.append(block)
                 room_states.append(RoomState(t=t, size=len(waiting_room)))
         elif next_event_name == 'mining':

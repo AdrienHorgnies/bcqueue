@@ -34,7 +34,11 @@ extension `.csv`. For examples, see the `parameters` folder this repository cont
 Both versions of the queue requires the following parameters :
 
 - b : The max number of transactions a block can contain.
+- sigma : The time at which the simulation stops recording new transactions. If less than one, it's considered to be a
+  fraction of tau.
 - tau : The time at which the simulation stops recording new transactions.
+- upsilon : The extra time after tau after which the queue shutdowns. If less than one, it's considered to be a fraction
+  of tau.
 
 The M/M/1 queue requires the following parameters :
 
@@ -54,9 +58,8 @@ The MAP/PH/1 queue requires the following parameters :
 
 ## Measures
 
-The measures are taken from tau / 2 to tau. Only the transactions arrivals, and blocks selection comprised in this
-interval are taken into consideration. Furthermore, the queue continues running for up to ten expected block times after
-tau. No late blocks or transactions are used for the measures, but it lets on-time transaction exit the queue.
+Transaction arrivals, and blocks selection are recorded from sigma to tau. Blocks mining are recorded from sigma to tau
++ upsilon.
 
 All measures greater than ten expected block times are aggregated.
 
