@@ -85,7 +85,7 @@ def service_time(services, completions, ax):
 
 @Graph("Temps inter-arrivées", ylabel="Nombre d'arrivées", xlabel="Temps")
 def inter_arrival_time(arrivals, ax):
-    inter_arrival_times = arrivals[1:] - arrivals[:-1]
+    inter_arrival_times = np.ediff1d(arrivals)
 
     ax.hist(inter_arrival_times, bins='auto')
 
