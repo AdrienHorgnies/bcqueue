@@ -1,7 +1,6 @@
 import inspect
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 GRAPH_HANDLERS = []
 
@@ -61,32 +60,22 @@ def draw(**measures):
 
 
 @Graph("Temps d'attente des transactions", ylabel="Nombre de transactions", xlabel="Temps")
-def waiting_time(arrivals, services, ax):
-    waiting_times = services - arrivals
-
-    ax.hist(waiting_times, bins='auto')
+def waiting_duration(waiting_durations, ax):
+    ax.hist(waiting_durations, bins='auto')
 
 
 @Graph("Temps de bloc", xlabel="Temps", ylabel="Nombre de blocs")
-def block_time(blocks, ax):
-    block_times = np.array([b.mining for b in blocks])
-
-    inter_block_times = block_times[1:] - block_times[:-1]
-
+def block_time(inter_block_times, ax):
     ax.hist(inter_block_times, bins='auto')
 
 
 @Graph("Temps de service", xlabel="Temps", ylabel="Nombre de transactions")
-def service_time(services, completions, ax):
-    service_durations = completions - services
-
+def service_time(service_durations, ax):
     ax.hist(service_durations, bins='auto')
 
 
 @Graph("Temps inter-arrivées", ylabel="Nombre d'arrivées", xlabel="Temps")
-def inter_arrival_time(arrivals, ax):
-    inter_arrival_times = np.ediff1d(arrivals)
-
+def inter_arrival_time(inter_arrival_times, ax):
     ax.hist(inter_arrival_times, bins='auto')
 
 
