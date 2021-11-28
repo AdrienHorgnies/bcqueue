@@ -7,9 +7,11 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 from numpy.random import SeedSequence, SFC64, Generator
 
-from measures import print_stats, print_graphs
+import graphs
+from measures import print_stats
 from simulations import mm1_simulation, map_ph_simulation
 
 SEED_SEQUENCE = SeedSequence()
@@ -82,7 +84,14 @@ def main():
 
         print('M/M/1 stats:')
         print_stats(arrivals, services, completions, blocks, tau)
-        print_graphs(arrivals, services, completions, blocks, 'M/M/1')
+        graphs.draw(**{
+            'arrivals': np.array(arrivals),
+            'services': np.array(services),
+            'completions': np.array(completions),
+            'blocks': blocks,
+            'tau': tau,
+            'queue_name': 'M/M/1'
+        })
 
     if args.mapph1:
         results = map_ph_simulation(generators, b=b, tau=tau, C=C, D=D, omega=omega, S=S, beta=beta, T=T, alpha=alpha)
@@ -90,7 +99,14 @@ def main():
 
         print('MAP/PH/1 stats:')
         print_stats(arrivals, services, completions, blocks, tau)
-        print_graphs(arrivals, services, completions, blocks, 'MAP/PH/1')
+        graphs.draw(**{
+            'arrivals': np.array(arrivals),
+            'services': np.array(services),
+            'completions': np.array(completions),
+            'blocks': blocks,
+            'tau': tau,
+            'queue_name': 'MAP/PH/1'
+        })
 
     if not (args.mm1 or args.mapph1):
         print("You didn't select any simulation to run.", file=sys.stderr)
