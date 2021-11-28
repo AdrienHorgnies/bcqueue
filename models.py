@@ -1,8 +1,21 @@
-class Block:
-    def __init__(self, size, selection, mining=None):
-        self.size = size
-        self.selection = selection
-        self.mining = mining
+from dataclasses import dataclass
 
-    def mined(self, mining):
-        self.mining = mining
+
+@dataclass
+class Block:
+    selection: float
+    size: int
+    mining: float = None
+
+
+@dataclass
+class Tx:
+    arrival: float
+    selection: float = None
+    mining: float = None
+
+
+@dataclass
+class RoomState:
+    t: float
+    size: int

@@ -1,21 +1,25 @@
 import numpy as np
 
-from models import Block
+from models import Block, Tx, RoomState
 
 
 def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
     """
+    Simulate the blockchain system with a M/M/1 queue
+
     :param generators: Pseudo random generators
     :param b: Max number of transactions per block
     :param tau: End time of the simulation
-    :param _lambda: Average inter-arrival time
-    :param mu1: Average service time (selection)
-    :param mu2: Average service time (mining)
-    :return: (arrivals, services, completions, blocks)
+    :param _lambda: Expected inter-arrival time
+    :param mu1: Expected selection duration
+    :param mu2: Expected mining duration
+    :return: dict containing transactions, blocks, room_sizes and queue parameters
     """
-    # each measure is a trio (arrival_time, service_beginning_time, completion_time)
-    measures = []
+    expected_block_time = mu1 + mu2
+
+    transactions = []
     blocks = []
+    room_states = []
 
     def next_arrival():
         return t + generators[0].exponential(_lambda)
@@ -33,39 +37,53 @@ def mm1_simulation(generators, b, tau, _lambda, mu1, mu2):
         'mining': float('inf')
     }
 
-    # list of txs, identified by their time of arrival
-    waiting_tx = []
-    block_tx = []
+    waiting_room = []
+    server_room = []
+    block = None
 
-    while t < tau:
+    while t < tau + 0 * expected_block_time:
         next_event_name = min(scheduler, key=scheduler.get)
         t = scheduler[next_event_name]
 
         if next_event_name == 'arrival':
-            waiting_tx.append(t)
+            tx = Tx(arrival=t)
+            waiting_room.append(tx)
             scheduler['arrival'] = next_arrival()
+
+            if tau / 2 <= t < tau:
+                transactions.append(tx)
+                room_states.append(RoomState(t=t, size=len(waiting_room)))
         elif next_event_name == 'selection':
             # We select as many tx as possible, but at most b
-            effective_b = min(len(waiting_tx), b)
+            effective_b = min(len(waiting_room), b)
             # We select b transactions by shuffling the whole list and select the b first transactions
             # TODO use efficient random sampling algorithm from Knuth.
-            generators[3].shuffle(waiting_tx)
-            block_tx, waiting_tx = waiting_tx[:effective_b], waiting_tx[effective_b:]
+            generators[3].shuffle(waiting_room)
+            server_room, waiting_room = waiting_room[:effective_b], waiting_room[effective_b:]
+
+            for tx in server_room:
+                tx.selection = t
 
             scheduler['selection'] = float('inf')
             scheduler['mining'] = next_mining()
-            block = Block(size=effective_b, selection=t)
-        elif next_event_name == 'mining':
-            if t > tau / 2:
-                # noinspection PyUnboundLocalVariable
-                measures.extend((tx, block.selection, t) for tx in block_tx)
-                block.mining = t
-                blocks.append(block)
+            block = Block(selection=t, size=effective_b)
 
+            if tau / 2 <= t < tau:
+                blocks.append(block)
+                room_states.append(RoomState(t=t, size=len(waiting_room)))
+        elif next_event_name == 'mining':
             scheduler['selection'] = next_selection()
             scheduler['mining'] = float('inf')
 
-    return *list(zip(*sorted(measures))), blocks
+            block.mining = t
+            for tx in server_room:
+                tx.mining = t
+
+    return {
+        'transactions': transactions,
+        'blocks': blocks,
+        'room_states': room_states,
+    }
 
 
 def map_ph_simulation(generators,

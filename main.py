@@ -11,7 +11,7 @@ import numpy as np
 from numpy.random import SeedSequence, SFC64, Generator
 
 import graphs
-from measures import print_stats
+from stats import print_stats
 from simulations import mm1_simulation, map_ph_simulation
 
 SEED_SEQUENCE = SeedSequence()
@@ -68,7 +68,7 @@ def main():
     args = parser.parse_args()
 
     # Parsing parameters from file system
-    C, D, S, T, _lambda, alpha, b, beta, mu1, mu2, omega, tau = parse_files(args)
+    C, D, S, T, _lambda, alpha, b, beta, mu1, mu2, omega, tau = parameters_from(Path(args.parameters_dir))
 
     # Initiating pseudo random generator
     global SEED_SEQUENCE
@@ -79,19 +79,10 @@ def main():
 
     # Simulations
     if args.mm1:
-        results = mm1_simulation(generators, b=b, tau=tau, _lambda=_lambda, mu1=mu1, mu2=mu2)
-        arrivals, services, completions, blocks = results
+        measured_values = mm1_simulation(generators, b=b, tau=tau, _lambda=_lambda, mu1=mu1, mu2=mu2)
 
-        print('M/M/1 stats:')
-        print_stats(arrivals, services, completions, blocks, tau)
-        graphs.draw(**{
-            'arrivals': np.array(arrivals),
-            'services': np.array(services),
-            'completions': np.array(completions),
-            'blocks': blocks,
-            'tau': tau,
-            'queue_name': 'M/M/1'
-        })
+        stats = print_stats(**measured_values)
+        graphs.draw(**measured_values, **stats)
 
     if args.mapph1:
         results = map_ph_simulation(generators, b=b, tau=tau, C=C, D=D, omega=omega, S=S, beta=beta, T=T, alpha=alpha)
@@ -115,28 +106,33 @@ def main():
         plt.show()
 
 
-def parse_files(args):
-    parameters_dir = Path(args.parameters_dir)
-    assert parameters_dir.exists(), f"Directory '{parameters_dir}' should exist."
-    assert parameters_dir.is_dir(), f"Directory '{parameters_dir}' should be a directory."
+def parameters_from(_dir):
+    assert _dir.exists(), f"Directory '{_dir}' should exist."
+    assert _dir.is_dir(), f"Directory '{_dir}' should be a directory."
     for name in ['C.csv', 'omega.csv', 'S.csv', 'beta.csv', 'T.csv', 'alpha.csv', 'b.csv', 'tau.csv', 'lambda.csv',
                  'mu1.csv', 'mu2.csv']:
-        assert parameters_dir.joinpath(name).exists(), f"File '{name}' should exist."
-    b = int_from(parameters_dir.joinpath('b.csv'))
-    tau = float_from(parameters_dir.joinpath('tau.csv'))
-    C = matrix_from(parameters_dir.joinpath('C.csv'))
-    D = matrix_from(parameters_dir.joinpath('D.csv'))
-    omega = vector_from(parameters_dir.joinpath('omega.csv'))
+        assert _dir.joinpath(name).exists(), f"File '{name}' should exist."
+
+    b = int_from(_dir.joinpath('b.csv'))
+    tau = float_from(_dir.joinpath('tau.csv'))
+
+    _lambda = float_from(_dir.joinpath('lambda.csv'))
+    mu1 = float_from(_dir.joinpath('mu1.csv'))
+    mu2 = float_from(_dir.joinpath('mu2.csv'))
+
+    C = matrix_from(_dir.joinpath('C.csv'))
+    D = matrix_from(_dir.joinpath('D.csv'))
+    omega = vector_from(_dir.joinpath('omega.csv'))
     assert len(C) == len(D) == len(omega), "C, D and omega must have the same size!"
-    S = matrix_from(parameters_dir.joinpath('S.csv'))
-    beta = vector_from(parameters_dir.joinpath('beta.csv'))
+
+    S = matrix_from(_dir.joinpath('S.csv'))
+    beta = vector_from(_dir.joinpath('beta.csv'))
     assert len(S) == len(beta), "S and beta must have the same size!"
-    T = matrix_from(parameters_dir.joinpath('T.csv'))
-    alpha = vector_from(parameters_dir.joinpath('alpha.csv'))
+
+    T = matrix_from(_dir.joinpath('T.csv'))
+    alpha = vector_from(_dir.joinpath('alpha.csv'))
     assert len(T) == len(alpha), "S and beta must have the same size!"
-    _lambda = float_from(parameters_dir.joinpath('lambda.csv'))
-    mu1 = float_from(parameters_dir.joinpath('mu1.csv'))
-    mu2 = float_from(parameters_dir.joinpath('mu2.csv'))
+
     return C, D, S, T, _lambda, alpha, b, beta, mu1, mu2, omega, tau
 
 
