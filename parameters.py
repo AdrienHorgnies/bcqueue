@@ -8,15 +8,27 @@ from keyword import iskeyword
 import numpy as np
 
 
+class Rule:
+    """
+    Dummy class to annotate a rule in the Parameters class.
+    """
+    pass
+
+
 class Parameters:
     """
     Defines all the parameters required to run the simulations.
 
-    Each class attribute with an annotation corresponds to a parameter definition.
-     Python builtins and keyword name cannot be used, prefix them with an underscore.
-    The annotation is used as the expected type of the parameter or its sub elements if the parameter is not scalar
-    The value of the class attribute is used to convert the actual value of the parameter, other parameters can be used
-     as argument of the converter function, but only if said parameters don't depend on other parameters as well.
+    A parameter is defined by a class attribute with an annotation other than Rule.
+      A parameter is defined by its name (name of the class attribute), its type (annotation) and converter (value).
+      Python builtins and keyword name cannot be used, prefix them with an underscore.
+      If the parameter is a structured type, the annotation is used for the sub elements of the structure.
+      If present, the converter receives actual value of parameters and returns the new value to use.
+
+    A rule is defined by a class attribute with an annotation Rule.
+      A rule's value must be a tuple (lambda, message).
+      The lambda can used any parameter and must return a boolean.
+      It asserts the produced boolean is true, else it raises an AssertionError and display the message.
     """
     b: int
     sigma: float = lambda sigma, tau: sigma if sigma > 1 else sigma * tau
@@ -30,11 +42,15 @@ class Parameters:
     C: float
     D: float
     omega: float
+    map_dimensions: Rule = lambda C, D, omega: len(C) == len(D) == len(omega), "C, D and omega must have the same size!"
 
     S: float
     beta: float
+    ph_selection_size: Rule = lambda S, beta: len(S) == len(beta), "S and beta must have the same size!"
+
     T: float
     alpha: float
+    ph_mining_size: Rule = lambda T, alpha: len(T) == len(alpha), "T and alpha must have the same size!"
 
     @classmethod
     def get_from(cls, _dir):
@@ -45,7 +61,8 @@ class Parameters:
         :return: A mapping of the parameters and their value
         :rtype: dict
         """
-        param_definitions = cls.__annotations__
+        param_definitions = {name: definition for name, definition in cls.__annotations__.items() if
+                             not issubclass(definition, Rule)}
 
         assert _dir.exists(), f"Directory '{_dir}' should exist."
         assert _dir.is_dir(), f"Directory '{_dir}' should be a directory."
@@ -66,6 +83,9 @@ class Parameters:
             except ValueError:
                 exit(f"Could not parse {file}")
 
+        assert not param_definitions.keys() - p.keys(), f"Missing parameter(s) {param_definitions.keys() - p.keys()}"
+        assert not p.keys() - param_definitions.keys(), f"Extraneous parameter(s) {p.keys() - param_definitions.keys()}"
+
         convertibles = [pd for pd in param_definitions if hasattr(cls, pd)]
         for param_name in convertibles:
             converter = getattr(cls, param_name)
@@ -73,11 +93,16 @@ class Parameters:
             args = [p[arg] for arg in sig.parameters]
             p[param_name] = converter(*args)
 
-        assert not param_definitions.keys() - p.keys(), f"Missing parameter(s) {param_definitions.keys() - p.keys()}"
-        assert not p.keys() - param_definitions.keys(), f"Extraneous parameter(s) {p.keys() - param_definitions.keys()}"
+        rules = {name: rule for name, rule in cls.__annotations__.items() if issubclass(rule, Rule)}
+        for rule_name, rule in rules.items():
+            assert hasattr(cls, rule_name), f"You forgot to provide a lambda and assert message, for {rule_name!a}."
+            rule_func = getattr(cls, rule_name)[0]
+            fail_msg = getattr(cls, rule_name)[1]
 
-        assert len(p['C']) == len(p['D']) == len(p['omega']), "C, D and omega must have the same size!"
-        assert len(p['S']) == len(p['beta']), "S and beta must have the same size!"
+            sig = inspect.signature(rule_func)
+            args = [p[arg] for arg in sig.parameters]
+            assert rule_func(*args), fail_msg
+
         assert len(p['T']) == len(p['alpha']), "S and beta must have the same size!"
 
         return p
