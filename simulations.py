@@ -227,16 +227,13 @@ class MapDoublePh:
         probabilities = np.ones(len(self.map.C) + len(self.map.D) + len(self.ph.M) + 1)
 
         offset = 0
-        for idx in range(len(self.map.C)):
-            probabilities[offset + idx] = self.map.C[map_state][idx]
+        probabilities[offset:len(self.map.C)] = self.map.C[map_state]
 
         offset += len(self.map.C)
-        for idx in range(len(self.map.D)):
-            probabilities[offset + idx] = self.map.D[map_state][idx]
+        probabilities[offset:offset + len(self.map.D)] = self.map.D[map_state]
 
         offset += len(self.map.D)
-        for idx in range(len(self.ph.M)):
-            probabilities[offset + idx] = self.ph.M[ph_state][idx]
+        probabilities[offset:offset + len(self.ph.M)] = self.ph.M[ph_state]
 
         offset += len(self.ph.M)
         probabilities[offset] = -sum(self.ph.M[ph_state])
