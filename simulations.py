@@ -216,10 +216,17 @@ class MapDoublePh:
     def get_next_state_prob_vector(self, map_state, ph_state):
         """
         Compute the probability vector for the given state to simulate the next state
-        It asks parameters that are in the instance for cache purposes
 
-        :param map_state: self.map.state
-        :param ph_state: self.ph.state
+        The way it works is that it creates the concatenation of one row of C, D, M plus the
+        absorbing event of M. The row chosen depends on the state of the map and ph.
+
+        This probability vector enables us to randomly choose the next event while respecting the probability of
+        each event.
+        Each event is identified by its index in this vector.
+        Diagonal elements of matrix C and M are kept but set to a probability of zero.
+
+        :param map_state: self.map.state required for cache purpose
+        :param ph_state: self.ph.state required for cache purpose
         :return: the probability linked to the current state
         """
         # array beginning as weight, then becoming probabilities.
