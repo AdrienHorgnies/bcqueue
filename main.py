@@ -47,8 +47,7 @@ def main():
 
     if args.mapph1:
         print('MAP/PH/1')
-        measured_values = map_ph_simulation(generators, b=b, tau=tau, C=C, D=D, omega=omega, S=S, beta=beta, T=T,
-                                            alpha=alpha)
+        measured_values = map_ph_simulation(generators, **p)
 
         stats = print_stats(**measured_values)
         graphs.draw(**measured_values, **stats, queue_name='MAP/PH/1')

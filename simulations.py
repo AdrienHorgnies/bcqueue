@@ -1,3 +1,5 @@
+from functools import cache
+
 import numpy as np
 
 from models import Block, Tx, RoomState
@@ -15,6 +17,7 @@ def mm1_simulation(generators, b, sigma, tau, upsilon, _lambda, mu1, mu2, **p):
     :param _lambda: Expected inter-arrival time
     :param mu1: Expected selection duration
     :param mu2: Expected mining duration
+    :param p: other unused parameters
     :return: dict containing transactions, blocks, room_sizes and queue parameters
     """
     transactions = []
@@ -57,7 +60,6 @@ def mm1_simulation(generators, b, sigma, tau, upsilon, _lambda, mu1, mu2, **p):
             # We select as many tx as possible, but at most b
             effective_b = min(len(waiting_room), b)
             # We select b transactions by shuffling the whole list and select the b first transactions
-            # TODO use efficient random sampling algorithm from Knuth.
             generators[3].shuffle(waiting_room)
             server_room, waiting_room = waiting_room[:effective_b], waiting_room[effective_b:]
 
@@ -90,8 +92,8 @@ def map_ph_simulation(generators,
                       b, tau,
                       C, D, omega,
                       S, beta,
-                      T, alpha
-                      ):
+                      T, alpha,
+                      **p):
     """
     :param generators: Pseudo random generators
     :param b: Max number of transactions per block
@@ -103,6 +105,7 @@ def map_ph_simulation(generators,
     :param beta: Absorbing transitions probability vector for PH (selection)
     :param T: Generating matrix for PH (mining)
     :param alpha: Absorbing transitions probability vector for PH (mining)
+    :param p: other unused parameters
     """
     # TODO BONUS voir comment tenir compte de la prio ?
 
@@ -187,16 +190,7 @@ class MapDoublePh:
         self.forward()
 
         # Build weight vector by appending correct rows of C, D, M1 and M2
-        # TODO reuse array to avoid reallocation, it's always the same size !
-        #  or cache it using map.state, ph.name, ph.state as a key ? Can't do that if matrices are too big
-        weights = np.array(self.map.C[self.map.state] +
-                           self.map.D[self.map.state] +
-                           self.ph.M[self.ph.state] +
-                           [self.ph.v[self.ph.state]])
-        # exclude current state by setting its weight to zero
-        weights[weights < 0] = 0
-
-        probabilities = weights / weights.sum()
+        probabilities = self.get_next_state_prob_vector(self.map.state, self.ph.state)
 
         # Choosing next event, represented by his index
         next_event = self.g.choice(self.range, 1, p=probabilities)[0]
@@ -208,7 +202,7 @@ class MapDoublePh:
         elif next_event < len(self.map.C) + len(self.map.D):
             self.map.state = next_event - len(self.map.C)
             return self.t, 'arrival'
-        elif next_event < len(weights) - 1:
+        elif next_event < len(probabilities) - 1:
             self.ph.state = next_event - len(self.map.C) - len(self.map.C)
             return self.next()
         else:
@@ -217,6 +211,42 @@ class MapDoublePh:
             finally:
                 self.ph.roll_state()
                 self.ph, self.inactive_ph = self.inactive_ph, self.ph
+
+    @cache
+    def get_next_state_prob_vector(self, map_state, ph_state):
+        """
+        Compute the probability vector for the given state to simulate the next state
+        It asks parameters that are in the instance for cache purposes
+
+        :param map_state: self.map.state
+        :param ph_state: self.ph.state
+        :return: the probability linked to the current state
+        """
+        # array beginning as weight, then becoming probabilities.
+        # Same array to save execution time
+        probabilities = np.ones(len(self.map.C) + len(self.map.D) + len(self.ph.M) + 1)
+
+        offset = 0
+        for idx in range(len(self.map.C)):
+            probabilities[offset + idx] = self.map.C[map_state][idx]
+
+        offset += len(self.map.C)
+        for idx in range(len(self.map.D)):
+            probabilities[offset + idx] = self.map.D[map_state][idx]
+
+        offset += len(self.map.D)
+        for idx in range(len(self.ph.M)):
+            probabilities[offset + idx] = self.ph.M[ph_state][idx]
+
+        offset += len(self.ph.M)
+        probabilities[offset] = -sum(self.ph.M[ph_state])
+
+        # render negative number on the diagonals inoffensive for the purpose of this array by setting them to 0
+        probabilities[probabilities < 0] = 0
+
+        probabilities /= probabilities.sum()
+
+        return probabilities
 
 
 class StatefulProcess:
