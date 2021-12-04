@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from simulations import MapDoublePh
+from processes import MapDoublePh
 import numpy as np
 
 
@@ -19,22 +19,22 @@ class TestMap(TestCase):
                             [[-0.001, 0], [0, -0.001]],  # unused in this test
                             [0.1, 0.9])  # unused in this test
 
-        actual = mapPh.get_next_state_prob_vector(0, 0)
+        actual = mapPh.get_next_state_prob_vector(mapPh.ph, 0, 0)
         expected = np.array([0, 0.3, 0.05, 0.95, 0, 0.08, 0.02])
         expected /= expected.sum()
         self.assertTrue(np.allclose(actual, expected))
 
-        actual = mapPh.get_next_state_prob_vector(1, 0)
+        actual = mapPh.get_next_state_prob_vector(mapPh.ph, 1, 0)
         expected = np.array([0.5, 0, 0.15, 0.85, 0, 0.08, 0.02])
         expected /= expected.sum()
         self.assertTrue(np.allclose(actual, expected))
 
-        actual = mapPh.get_next_state_prob_vector(0, 1)
+        actual = mapPh.get_next_state_prob_vector(mapPh.ph, 0, 1)
         expected = np.array([0, 0.3, 0.05, 0.95, 0.06, 0, 0.04])
         expected /= expected.sum()
         self.assertTrue(np.allclose(actual, expected))
 
-        actual = mapPh.get_next_state_prob_vector(1, 1)
+        actual = mapPh.get_next_state_prob_vector(mapPh.ph, 1, 1)
         expected = np.array([0.5, 0, 0.15, 0.85, 0.06, 0, 0.04])
         expected /= expected.sum()
         self.assertTrue(np.allclose(actual, expected))
