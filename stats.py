@@ -1,7 +1,32 @@
+"""
+Module to compute statistical measure to print to the console
+"""
 import numpy as np
 
 
-def print_stats(transactions, blocks, room_states):
+def compute_print_stats(transactions, blocks, room_states):
+    """
+    Print statistical measures from received data, and return a dictionary with:
+    - arrivals
+    - services (time of start)
+    - completions
+    - inter_arrival_times
+    - sojourn_durations
+    - waiting_durations
+    - service_durations
+    - inter_block_times
+    - block_sizes
+    - room_times
+    - room_sizes
+
+    Under each key is a list of float ready to be used for graphs
+
+    :param transactions: list of recorded transactions
+    :param blocks:  list of recorded blocks
+    :param room_states: list of recorded waiting room states
+
+    :return: a dictionary with all sorts of measures
+    """
     stats = {
         'arrivals': np.empty(len(transactions)),
         'services': np.empty(len(transactions)),

@@ -18,6 +18,7 @@ class Rule:
 class Parameters:
     """
     Defines all the parameters required to run the simulations.
+    For more details on how they are used, read the README.
 
     A parameter is defined by a class attribute with an annotation other than Rule.
       A parameter is defined by its name (name of the class attribute), its type (annotation) and converter (value).

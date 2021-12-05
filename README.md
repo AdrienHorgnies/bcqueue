@@ -5,11 +5,32 @@ Simulation of a proof-of-work blockchain system. It provides a MAP/PH/1 queue, a
 It is meant to be a computation model for the mathematical model developed by Quan-Lin Li, Jing-Yu Ma, Yan-Xia Chang,
 Fan-Qi Ma & Hai-Bo Yu in "Markov processes in blockchain systems". Find it at https://doi.org/10.1186/s40649-019-0066-1.
 
-Furthermore, I have elaborated that this model would be more realistic if it took transactions fees into account.
-Miners prioritize transactions that offer larger fees.
-Thus, this script enables to select transactions in random order, or in fees order.
+Furthermore, I have elaborated that this model would be more realistic if it took transactions fees into account. Miners
+prioritize transactions that offer larger fees. Thus, this script enables to select transactions in random order, or in
+fees order.
 
 For more information about this work, please read the accompanying thesis.
+
+## Usage
+
+```
+usage: main.py [-h] [--seed SEED] [--mm1] [--mapph1] [--fees] [parameters_dir]
+
+Simulate a proof-of-work blockchain system with a M/M/1 or MAP/PH/1 queue,
+with fees or not.
+
+positional arguments:
+  parameters_dir  path to directory containing the parameters (README for
+                  details)
+
+optional arguments:
+  -h, --help      show this help message and exit
+  --seed SEED     seed to initialize the pseudo random generator
+  --mm1           run the simulation with M/M/1 queue
+  --mapph1        run the simulation with MAP/PH/1 queue
+  --fees          Prioritize transactions according to offered fees
+                  (otherwise, random order)
+```
 
 ## Model
 
@@ -23,9 +44,9 @@ The queue is a two steps batch process :
   step is done, the transactions definitely leaves the queue.
 - The first and second steps are mutually exclusive and follow each other without interruption.
 
-The queue comes in two version : M/M/1 (CLI option `--mm1`) or MAP/PH/1 (CLI option `--mapph1`).
-The "transactions selection" step can be changed to prioritize transactions with higher fees (CLI option `--fees`).
-If the fees are enabled, transactions are assigned a fee following a truncated normal distribution.
+The queue comes in two version : M/M/1 (CLI option `--mm1`) or MAP/PH/1 (CLI option `--mapph1`). The "transactions
+selection" step can be changed to prioritize transactions with higher fees (CLI option `--fees`). If the fees are
+enabled, transactions are assigned a fee following a truncated normal distribution.
 
 ## Parameters
 
@@ -45,10 +66,11 @@ Both versions of the queue requires the following parameters :
 - tau : The time at which the simulation stops recording new transactions.
 - upsilon : The extra time after tau after which the queue shutdowns. If less than one, it's considered to be a fraction
   of tau.
-  
-The truncated normal distribution of the fees is defined by the following parameters : 
+
+The truncated normal distribution of the fees is defined by the following parameters :
+
 - fee_loc : The centre or mean
-- fee_scale : The standard deviation  
+- fee_scale : The standard deviation
 - fee_min : The lower bound
 - fee_max : the upper bound
 
@@ -71,6 +93,7 @@ The MAP/PH/1 queue requires the following parameters :
 ## Measures
 
 Transaction arrivals, and blocks selection are recorded from sigma to tau. Blocks mining are recorded from sigma to tau
+
 + upsilon.
 
 All measures greater than ten expected block times are aggregated.
@@ -84,7 +107,6 @@ All measures greater than ten expected block times are aggregated.
 - The block size : The number of transactions per block
 - The waiting room size : The number of transactions in the waiting room.
 
-
 ## Execution time
 
 With the default parameters, simulating the queues takes from seven seconds to about two minutes.
@@ -95,13 +117,14 @@ With the default parameters, simulating the queues takes from seven seconds to a
 | MAP/PH/1        | 40s    | 140s |
 
 From that it's very clear that sorting the transactions according to their fees has a high cost to the execution time.
-Investing time in optimizing the sorting method would be greatly beneficial.
-One could take advantage of the particular behaviour of the waiting room to do so : 
+Investing time in optimizing the sorting method would be greatly beneficial. One could take advantage of the particular
+behaviour of the waiting room to do so :
+
 - Top b transactions are removed with each block
-- Order within top b transactions, or within the rest in not important  
+- Order within top b transactions, or within the rest in not important
 - Transactions are added much more frequently than they are removed.
 - Transactions are added one by one
 - Transactions are removed `b` by `b`
 
 Furthermore, by creating a C addon, and handling the memory himself, one would be able to use a single array for the
- waiting room, and a single array for the server room. That would greatly reduce the memory management overhead. 
+waiting room, and a single array for the server room. That would greatly reduce the memory management overhead. 

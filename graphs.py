@@ -1,3 +1,8 @@
+"""
+Module handles the creation of graphs.
+
+It provides a decoration Graph that helps quickly create a new graph and a function draw which actually draw the graphs
+"""
 import inspect
 
 import matplotlib.pyplot as plt
@@ -9,8 +14,9 @@ class Graph:
     """
     Decorator to register a function as a graph handler.
     Such decorated function will be called when graphs.draw is called
-    The decorated function will receive the ax parameter along with any other available measure
-    The ax parameter is the AxesSubplot from matplotlib.pyplot.
+    The decorated function will receive the ax parameter along with any other available parameter.
+     It is thus mandatory to define an ax parameter.
+     The ax parameter is the AxesSubplot from matplotlib.pyplot.
     """
 
     def __init__(self, title, ylabel, xlabel):
@@ -28,35 +34,35 @@ class Graph:
         Decorate the function, and register the wrapper
 
         :param func: The decorated function
-        :return: A wrapper that gets func required parameters, create the graph and pass them along to func
+        :return: A wrapper that filters func required parameters, creates the AxesSubplot and pass it along to func
         """
 
-        def wrapper(**measures):
+        def wrapper(**parameters):
             signature = inspect.signature(func)
-            keys = [param.name for param in signature.parameters.values()
-                    if param.kind == param.POSITIONAL_OR_KEYWORD and param.name != 'ax']
-            filtered_kwargs = {key: measures[key] for key in keys}
+            param_names = [param.name for param in signature.parameters.values()
+                           if param.kind == param.POSITIONAL_OR_KEYWORD and param.name != 'ax']
+            filtered_parameters = {key: parameters[key] for key in param_names}
 
             fig, ax = plt.subplots()
-            fig.canvas.manager.set_window_title(f"{self.title} ({measures['queue_name']})")
+            fig.canvas.manager.set_window_title(f"{self.title} ({parameters['queue_name']})")
 
             ax.set(xlabel=self.xlabel, ylabel=self.ylabel,
                    title=self.title)
-            return func(ax=ax, **filtered_kwargs)
+            return func(ax=ax, **filtered_parameters)
 
         GRAPH_HANDLERS.append(wrapper)
         return wrapper
 
 
-def draw(**measures):
+def draw(**parameters):
     """
-    Call all the GRAPH_HANDLERS registered with @graph
+    Call all the functions decorated with @Graph, and provide them their required parameter
     
-    :param measures: the measures passed to the functions
-    :return: None
+    :param parameters: a mapping of parameters names and values,
+     containing at least the ones required by the @Graph decorated functions
     """
     for graph_handler in GRAPH_HANDLERS:
-        graph_handler(**measures)
+        graph_handler(**parameters)
 
 
 @Graph("Temps d'attente des transactions", ylabel="Nombre de transactions", xlabel="Temps")

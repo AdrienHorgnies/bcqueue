@@ -1,3 +1,6 @@
+"""
+Module that models the proof-of-work blockchain systems
+"""
 import scipy.stats as stats
 
 from models import Block, Tx, RoomState
@@ -5,6 +8,23 @@ from processes import MapDoublePh, MDoubleM
 
 
 def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee_max, fee_scale):
+    """
+    Simulate the blockchain system from t=0 to t=tau+sigma
+
+    :param scheduler: Control the flow of time (self.t) and events (self.next)
+    :param g: pseudo random generator used to randomly select transactions
+    :param b: max number of transactions in a block
+    :param sigma: time to start recording transaction arrivals and block selections
+    :param tau: time to stop recording transactions arrivals and block selections
+    :param upsilon: extra time to continue record transaction and block mining
+    :param fees: if fees must be used to prioritize transactions, random otherwise
+    :param fee_min: lower bound of fees
+    :param fee_loc: mean of the truncated normal distribution of fees
+    :param fee_max: upper bound of fees
+    :param fee_scale: standard deviation of the fees distribution
+    :return: the measures recorded during the simulation, a mapping with keys transactions, blocks and room_states;
+     respectively a list of Tx, a list of Block and a list of RoomState.
+    """
     fee_dist = stats.truncnorm((fee_min - fee_loc) / fee_scale,
                                (fee_max - fee_loc) / fee_scale,
                                loc=fee_loc, scale=fee_scale)
@@ -69,27 +89,20 @@ def mm1_simulation(generators,
                    fees, fee_min, fee_loc, fee_max, fee_scale,
                    **p):
     """
-    Simulate the blockchain system with a M/M/1 queue
+    Simulate the blockchain system with a M/M/1 queue.
 
-    :param generators: Pseudo random generators
-    :param b: Max number of transactions per block
-    :param sigma: Start time of the recording of measures
-    :param tau: End time of the recording of new measures
-    :param upsilon: Extra time after tau to complete existing measures
+    See method simulation for undocumented parameters.
+
+    :param generators: Pseudo random generators (use indices 0 to 4)
     :param _lambda: Expected inter-arrival time
     :param mu1: Expected selection duration
     :param mu2: Expected mining duration
-    :param fees: whether to use fees to prioritize transactions or not
-    :param fee_scale: Standard deviation of the truncated normal distribution to determine the fee of a transaction
-    :param fee_min: Lower limit of the fee distribution
-    :param fee_loc: Mean/Centre of the fee distribution
-    :param fee_max: Upper limit of the fee distribution
     :param p: other unused parameters
-    :return: dict containing transactions, blocks, room_sizes and queue parameters
+    :return: see simulation
     """
-    sch = MDoubleM(generators, _lambda, mu1, mu2)
+    scheduler = MDoubleM(generators, _lambda, mu1, mu2)
 
-    return simulation(sch, generators[3], b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee_max, fee_scale)
+    return simulation(scheduler, generators[3], b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee_max, fee_scale)
 
 
 def map_ph_simulation(generators,
@@ -100,11 +113,11 @@ def map_ph_simulation(generators,
                       fees, fee_min, fee_loc, fee_max, fee_scale,
                       **p):
     """
-    :param generators: Pseudo random generators
-    :param b: Max number of transactions per block
-    :param sigma: Start time of the recording of measures
-    :param tau: End time of the simulation
-    :param upsilon: Extra time after tau to complete existing measures
+    Simulate the blockchain system with a MAP/PH/1 queue.
+
+    See method simulation for undocumented parameters.
+
+    :param generators: Pseudo random generators (use indices 5 to 9)
     :param C: Generating matrix for MAP (non absorbing)
     :param D: Generating matrix for MAP (absorbing)
     :param omega: Stationary probability vector for MAP
@@ -112,11 +125,6 @@ def map_ph_simulation(generators,
     :param beta: Absorbing transitions probability vector for PH (selection)
     :param T: Generating matrix for PH (mining)
     :param alpha: Absorbing transitions probability vector for PH (mining)
-    :param fees: whether to use fees to prioritize transactions or not
-    :param fee_scale: Standard deviation of the truncated normal distribution to determine the fee of a transaction
-    :param fee_min: Lower limit of the fee distribution
-    :param fee_loc: Mean/Centre of the fee distribution
-    :param fee_max: Upper limit of the fee distribution
     :param p: other unused parameters
     """
     scheduler = MapDoublePh(generators, C, D, omega, S, beta, T, alpha)
