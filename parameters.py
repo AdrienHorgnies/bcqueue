@@ -1,5 +1,5 @@
 """
-Module to handle the parsing of the parameters directory
+Module which defines and parse the parameters required to run the simulation
 """
 import builtins
 import inspect
@@ -27,8 +27,8 @@ class Parameters:
 
     A rule is defined by a class attribute with an annotation Rule.
       A rule's value must be a tuple (lambda, message).
-      The lambda can used any parameter and must return a boolean.
-      It asserts the produced boolean is true, else it raises an AssertionError and display the message.
+      The lambda can use any defined parameter and must return True if rule is respected, False otherwise.
+      If the rule is not respected, raise an AssertionError and print the provided message.
     """
     b: int
     sigma: float = lambda sigma, tau: sigma if sigma > 1 else sigma * tau
@@ -57,6 +57,7 @@ class Parameters:
     fee_max: float
     fee_scale: float
     min_loc_max: Rule = lambda fee_min, fee_loc, fee_max: fee_min < fee_loc < fee_max, "fee_min < fee_loc < fee_max"
+    min_gt_0: Rule = lambda fee_min: fee_min >= 0, "fee_min >= 0"
     scale_gt_0: Rule = lambda fee_scale: fee_scale > 0, "fee_scale > 0"
 
     @classmethod
@@ -68,13 +69,16 @@ class Parameters:
         :return: A mapping of the parameters and their value
         :rtype: dict
         """
-        param_definitions = {name: definition for name, definition in cls.__annotations__.items() if
-                             not issubclass(definition, Rule)}
-
         assert _dir.exists(), f"Directory '{_dir}' should exist."
         assert _dir.is_dir(), f"Directory '{_dir}' should be a directory."
 
+        param_definitions = {name: definition for name, definition in cls.__annotations__.items() if
+                             not issubclass(definition, Rule)}
+
+        # parameters
         p = {}
+
+        # Loading parameter values from files
         for file in _dir.iterdir():
             param_name = file.stem
             if iskeyword(param_name) or param_name in dir(builtins):
@@ -88,18 +92,21 @@ class Parameters:
             try:
                 p[param_name] = np.loadtxt(file, delimiter=',', dtype=dtype)
             except ValueError:
-                exit(f"Could not parse {file}")
+                exit(f"Could not parse {file}, should be a CSV!")
 
         assert not param_definitions.keys() - p.keys(), f"Missing parameter(s) {param_definitions.keys() - p.keys()}"
         assert not p.keys() - param_definitions.keys(), f"Extraneous parameter(s) {p.keys() - param_definitions.keys()}"
 
+        # Convert the value of parameters defining a converter function.
         convertibles = [pd for pd in param_definitions if hasattr(cls, pd)]
         for param_name in convertibles:
             converter = getattr(cls, param_name)
             sig = inspect.signature(converter)
             args = [p[arg] for arg in sig.parameters]
+
             p[param_name] = converter(*args)
 
+        # Checking that all rules are respected
         rules = {name: rule for name, rule in cls.__annotations__.items() if issubclass(rule, Rule)}
         for rule_name, rule in rules.items():
             assert hasattr(cls, rule_name), f"You forgot to provide a lambda and assert message, for {rule_name!a}."
@@ -109,7 +116,5 @@ class Parameters:
             sig = inspect.signature(rule_func)
             args = [p[arg] for arg in sig.parameters]
             assert rule_func(*args), fail_msg
-
-        assert len(p['T']) == len(p['alpha']), "S and beta must have the same size!"
 
         return p
