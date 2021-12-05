@@ -1,5 +1,4 @@
 import scipy.stats as stats
-from sortedcontainers import SortedList
 
 from models import Block, Tx, RoomState
 from processes import MapDoublePh, MDoubleM
@@ -14,7 +13,7 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
     blocks = []
     room_states = []
 
-    waiting_room = SortedList() if fees else []
+    waiting_room = []
     server_room = []
     block = None
 
@@ -24,20 +23,22 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
         if event_name == 'arrival':
             if fees:
                 tx = Tx(fee=fee_dist.rvs(1), arrival=scheduler.t)
-                waiting_room.add(tx)
             else:
                 tx = Tx(fee=0, arrival=scheduler.t)
-                waiting_room.append(tx)
+
+            waiting_room.append(tx)
 
             if sigma <= scheduler.t < tau:
                 transactions.append(tx)
                 room_states.append(RoomState(t=scheduler.t, size=len(waiting_room)))
         elif event_name == 'selection':
-            if fees:
-                waiting_room, server_room = SortedList(waiting_room[:-b]), waiting_room[-b:]
+            if b >= len(waiting_room):
+                waiting_room, server_room = [], waiting_room
+            elif fees:
+                waiting_room.sort()
+                server_room = [waiting_room.pop() for _ in range(b)]
             else:
-                if b < len(waiting_room):
-                    g.shuffle(waiting_room)
+                g.shuffle(waiting_room)
                 waiting_room, server_room = waiting_room[b:], waiting_room[:b]
 
             for tx in server_room:

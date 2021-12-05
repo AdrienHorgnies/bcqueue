@@ -1,9 +1,13 @@
 # Blockchain queue
 
-Simulation of a proof-of-work blockchain system using a MAP/PH/1 queue. It also provides an M/M/1 queue for comparison.
+Simulation of a proof-of-work blockchain system. It provides a MAP/PH/1 queue, and an M/M/1 queue.
 
 It is meant to be a computation model for the mathematical model developed by Quan-Lin Li, Jing-Yu Ma, Yan-Xia Chang,
 Fan-Qi Ma & Hai-Bo Yu in "Markov processes in blockchain systems". Find it at https://doi.org/10.1186/s40649-019-0066-1.
+
+Furthermore, I have elaborated that this model would be more realistic if it took transactions fees into account.
+Miners prioritize transactions that offer larger fees.
+Thus, this script enables to select transactions in random order, or in fees order.
 
 For more information about this work, please read the accompanying thesis.
 
@@ -20,6 +24,8 @@ The queue is a two steps batch process :
 - The first and second steps are mutually exclusive and follow each other without interruption.
 
 The queue comes in two version : M/M/1 (CLI option `--mm1`) or MAP/PH/1 (CLI option `--mapph1`).
+The "transactions selection" step can be changed to prioritize transactions with higher fees (CLI option `--fees`).
+If the fees are enabled, transactions are assigned a fee following a truncated normal distribution.
 
 ## Parameters
 
@@ -39,6 +45,12 @@ Both versions of the queue requires the following parameters :
 - tau : The time at which the simulation stops recording new transactions.
 - upsilon : The extra time after tau after which the queue shutdowns. If less than one, it's considered to be a fraction
   of tau.
+  
+The truncated normal distribution of the fees is defined by the following parameters : 
+- fee_loc : The centre or mean
+- fee_scale : The standard deviation  
+- fee_min : The lower bound
+- fee_max : the upper bound
 
 The M/M/1 queue requires the following parameters :
 
@@ -71,3 +83,25 @@ All measures greater than ten expected block times are aggregated.
 - The block time : The time between successive blocks mining time.
 - The block size : The number of transactions per block
 - The waiting room size : The number of transactions in the waiting room.
+
+
+## Execution time
+
+With the default parameters, simulating the queues takes from seven seconds to about two minutes.
+
+| queue/selection | random | fees |
+|-----------------|--------|------|
+| M/M/1           | 7s     | 120s |
+| MAP/PH/1        | 40s    | 140s |
+
+From that it's very clear that sorting the transactions according to their fees has a high cost to the execution time.
+Investing time in optimizing the sorting method would be greatly beneficial.
+One could take advantage of the particular behaviour of the waiting room to do so : 
+- Top b transactions are removed with each block
+- Order within top b transactions, or within the rest in not important  
+- Transactions are added much more frequently than they are removed.
+- Transactions are added one by one
+- Transactions are removed `b` by `b`
+
+Furthermore, by creating a C addon, and handling the memory himself, one would be able to use a single array for the
+ waiting room, and a single array for the server room. That would greatly reduce the memory management overhead. 
