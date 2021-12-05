@@ -8,8 +8,9 @@ class Block:
     mining: float = None
 
 
-@dataclass
+@dataclass(order=True)
 class Tx:
+    fee: float
     arrival: float
     selection: float = None
     mining: float = None
