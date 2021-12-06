@@ -92,11 +92,10 @@ The MAP/PH/1 queue requires the following parameters :
 
 ## Measures
 
-Transaction arrivals, and blocks selection are recorded from sigma to tau. Blocks mining are recorded from sigma to tau
+Transaction arrivals, blocks selection and waiting room size are recorded from sigma to tau.
+Blocks mining are recorded from sigma to tau + upsilon.
 
-+ upsilon.
-
-All measures greater than ten expected block times are aggregated.
+All records are then aggregated into the following measures :
 
 - The confirmation time : Which is also the sojourn time, is the time between the arrival of a transaction, and the time
   it leaves. From a blockchain point of view, it corresponds to the time between the broadcast of the transaction and
@@ -106,6 +105,7 @@ All measures greater than ten expected block times are aggregated.
 - The block time : The time between successive blocks mining time.
 - The block size : The number of transactions per block
 - The waiting room size : The number of transactions in the waiting room.
+- Unconfirmed transactions : The number of transactions unconfirmed per fee.
 
 ## Execution time
 
