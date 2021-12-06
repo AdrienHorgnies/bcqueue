@@ -121,7 +121,7 @@ def sojourn_fees_boxplot(sojourn_durations, fees, ax):
             bins[idx - 1].append(sojourn)
 
     labels = [f"{e:.3f}" for e in edges]
-    ax.boxplot(bins, labels=labels)
+    ax.boxplot(bins, labels=labels, showfliers=False, showmeans=True)
     ax.set_xticklabels(labels, rotation=45, ha='right')
 
 
