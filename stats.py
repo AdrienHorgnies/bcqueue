@@ -30,12 +30,18 @@ def compute_print_stats(transactions, blocks, room_states):
     stats = {
         'arrivals': np.empty(len(transactions)),
         'services': np.empty(len(transactions)),
-        'completions': np.empty(len(transactions))}
+        'completions': np.empty(len(transactions))
+    }
+
+    if any(tx.fee for tx in transactions):
+        stats['fees'] = np.empty(len(transactions))
 
     for idx, tx in enumerate(transactions):
         stats['arrivals'][idx] = tx.arrival
         stats['services'][idx] = tx.selection
         stats['completions'][idx] = tx.mining
+        if 'fees' in stats:
+            stats['fees'][idx] = tx.fee
 
     stats['inter_arrival_times'] = np.ediff1d(stats['arrivals'])
     stats['sojourn_durations'] = stats['completions'] - stats['arrivals']

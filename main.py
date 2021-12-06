@@ -2,7 +2,6 @@
 Orchestrate the simulations and generate the figures presenting the results
 """
 import argparse
-import sys
 import time
 from pathlib import Path
 

@@ -1,6 +1,8 @@
 """
 Module that models the proof-of-work blockchain systems
 """
+import time
+
 import scipy.stats as stats
 
 from models import Block, Tx, RoomState
@@ -12,7 +14,7 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
     Simulate the blockchain system from t=0 to t=tau+sigma
 
     :param scheduler: Control the flow of time (self.t) and events (self.next)
-    :param g: pseudo random generator used to randomly select transactions
+    :param g: pseudo random generator used to randomly select transactions or choose fees
     :param b: max number of transactions in a block
     :param sigma: time to start recording transaction arrivals and block selections
     :param tau: time to stop recording transactions arrivals and block selections
@@ -25,9 +27,13 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
     :return: the measures recorded during the simulation, a mapping with keys transactions, blocks and room_states;
      respectively a list of Tx, a list of Block and a list of RoomState.
     """
+    print("Simulation started.")
+    start = time.perf_counter()
+
     fee_dist = stats.truncnorm((fee_min - fee_loc) / fee_scale,
                                (fee_max - fee_loc) / fee_scale,
                                loc=fee_loc, scale=fee_scale)
+    fee_dist.random_state = g
 
     transactions = []
     blocks = []
@@ -74,6 +80,7 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
             for tx in server_room:
                 tx.mining = scheduler.t
 
+    print(f"Simulation finished in {time.perf_counter() - start:.0f} seconds.")
     return {
         'transactions': transactions,
         'blocks': blocks,

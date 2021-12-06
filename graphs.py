@@ -6,8 +6,12 @@ It provides a decoration Graph that helps quickly create a new graph and a funct
 import inspect
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 GRAPH_HANDLERS = []
+
+# use same style as ggplot from R
+plt.style.use('ggplot')
 
 
 class Graph:
@@ -41,7 +45,12 @@ class Graph:
             signature = inspect.signature(func)
             param_names = [param.name for param in signature.parameters.values()
                            if param.kind == param.POSITIONAL_OR_KEYWORD and param.name != 'ax']
-            filtered_parameters = {key: parameters[key] for key in param_names}
+            try:
+                filtered_parameters = {key: parameters[key] for key in param_names}
+            except KeyError:
+                missing = set(param_names) - set(parameters)
+                print(f"{func.__name__} skipped because parameter(s) {missing} is (are) missing.")
+                return
 
             fig, ax = plt.subplots()
             fig.canvas.manager.set_window_title(f"{self.title} ({parameters['queue_name']})")
@@ -65,6 +74,11 @@ def draw(**parameters):
         graph_handler(**parameters)
 
 
+@Graph("Temps de confirmation des transactions", ylabel="Nombre de transactions", xlabel="Temps")
+def sojourn_duration(sojourn_durations, ax):
+    ax.hist(sojourn_durations, bins='auto')
+
+
 @Graph("Temps d'attente des transactions", ylabel="Nombre de transactions", xlabel="Temps")
 def waiting_duration(waiting_durations, ax):
     ax.hist(waiting_durations, bins='auto')
@@ -85,6 +99,46 @@ def inter_arrival_time(inter_arrival_times, ax):
     ax.hist(inter_arrival_times, bins='auto')
 
 
+@Graph("Taille des blocs", ylabel="Nombre de blocs", xlabel="Nombre de transactions")
+def block_size(block_sizes, ax):
+    ax.hist(block_sizes, bins='auto')
+
+
 @Graph("Trajectoire de la fil d'attente", ylabel="Nombre de transactions", xlabel="Temps")
 def trajectory(room_times, room_sizes, ax):
     ax.plot(room_times, room_sizes)
+
+
+@Graph("Temps de confirmation en fonction des frais", ylabel="Temps de confirmation", xlabel="Montant des frais")
+def sojourn_fees_boxplot(sojourn_durations, fees, ax):
+    edges = np.histogram_bin_edges(fees, bins='doane')
+    bin_indices = np.digitize(fees, edges)
+
+    bins = [[] for _ in range(len(edges))]
+
+    for idx, sojourn in zip(bin_indices, sojourn_durations):
+        if not np.isnan(sojourn):
+            bins[idx - 1].append(sojourn)
+
+    labels = [f"{e:.3f}" for e in edges]
+    ax.boxplot(bins, labels=labels)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+
+
+@Graph("Transactions non confirmées", ylabel="Nombre de transactions", xlabel="Montant des frais")
+def served_unconfirmed(services, completions, fees, ax):
+    served_unconfirmed_indices = np.logical_and(
+        np.invert(np.isnan(services)),
+        np.isnan(completions)
+    )
+    served_unconfirmed_fees = fees[served_unconfirmed_indices]
+
+    not_served_unconfirmed_indices = np.logical_and(
+        np.isnan(services),
+        np.isnan(completions)
+    )
+    not_served_unconfirmed_fees = fees[not_served_unconfirmed_indices]
+
+    ax.hist([not_served_unconfirmed_fees, served_unconfirmed_fees],
+            histtype='barstacked', bins='auto', label=['Non servies', 'Servies'])
+    ax.legend(prop={'size': 10})
