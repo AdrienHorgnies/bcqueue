@@ -33,6 +33,7 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
     fee_dist = stats.truncnorm((fee_min - fee_loc) / fee_scale,
                                (fee_max - fee_loc) / fee_scale,
                                loc=fee_loc, scale=fee_scale)
+    # set pseudo random generator of fee_dist
     fee_dist.random_state = g
 
     transactions = []

@@ -35,10 +35,16 @@ class Parameters:
     sigma: float = lambda sigma, tau: sigma if sigma > 1 else sigma * tau
     tau: float
     upsilon: float = lambda upsilon, tau: upsilon if upsilon > 1 else upsilon * tau
+    b_min: Rule = lambda b: b > 0, "b must be a strict positive integer."
+    sigma_tau: Rule = lambda sigma, tau: 0 < sigma < tau, "0 < sigma < tau"
+    upsilon_min: Rule = lambda upsilon: upsilon > 0, "upsilon must be strictly positive"
 
     _lambda: float
     mu1: float
     mu2: float
+    lambda_min: Rule = lambda _lambda: _lambda > 0, "_lambda > 0"
+    mu1_min: Rule = lambda mu1: mu1 > 0, "mu1 > 0"
+    mu2_min: Rule = lambda mu2: mu2 > 0, "mu2 > 0"
 
     C: float
     D: float
