@@ -104,12 +104,12 @@ def block_size(block_sizes, ax):
     ax.hist(block_sizes, bins='auto')
 
 
-@Graph("Trajectoire de la fil d'attente", ylabel="Nombre de transactions", xlabel="Temps")
+@Graph("Trajectoire de la file d'attente", ylabel="Nombre de transactions", xlabel="Temps")
 def trajectory(room_times, room_sizes, ax):
     ax.plot(room_times, room_sizes)
 
 
-@Graph("Temps de confirmation en fonction des frais", ylabel="Temps de confirmation", xlabel="Montant des frais")
+@Graph("Temps de confirmation en fonction des ratios frais/poids", ylabel="Temps de confirmation", xlabel="Ratio frais/poids (satoshi/WU)")
 def sojourn_fees_boxplot(sojourn_durations, fees, ax):
     edges = np.histogram_bin_edges(fees, bins='doane')
     bin_indices = np.digitize(fees, edges)
@@ -125,7 +125,7 @@ def sojourn_fees_boxplot(sojourn_durations, fees, ax):
     ax.set_xticklabels(labels, rotation=45, ha='right')
 
 
-@Graph("Transactions non confirmées", ylabel="Nombre de transactions", xlabel="Montant des frais")
+@Graph("Transactions non confirmées", ylabel="Nombre de transactions", xlabel="Ratios frais/poids (satoshi/WU)")
 def served_unconfirmed(services, completions, fees, ax):
     served_unconfirmed_indices = np.logical_and(
         np.invert(np.isnan(services)),

@@ -13,7 +13,7 @@ class Block:
 
 @dataclass(order=True)
 class Tx:
-    fee: float  # fee to reward the miner, 0 if None
+    ratio: float  # ratio of fee / weight
     arrival: float  # when it arrives into the queue
     selection: float = None  # when it was selected in a block
     mining: float = None  # when the containing block was mined

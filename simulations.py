@@ -3,13 +3,11 @@ Module that models the proof-of-work blockchain systems
 """
 import time
 
-import scipy.stats as stats
-
 from models import Block, Tx, RoomState
 from processes import MapDoublePh, MDoubleM
 
 
-def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee_max, fee_scale):
+def simulation(scheduler, g, b, sigma, tau, upsilon, fees, ratios):
     """
     Simulate the blockchain system from t=0 to t=tau+sigma
 
@@ -20,21 +18,12 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
     :param tau: time to stop recording transactions arrivals and block selections
     :param upsilon: extra time to continue record transaction and block mining
     :param fees: if fees must be used to prioritize transactions, random otherwise
-    :param fee_min: lower bound of fees
-    :param fee_loc: mean of the truncated normal distribution of fees
-    :param fee_max: upper bound of fees
-    :param fee_scale: standard deviation of the fees distribution
+    :param ratios: a list of fee on weight ratios to randomly choose from
     :return: the measures recorded during the simulation, a mapping with keys transactions, blocks and room_states;
      respectively a list of Tx, a list of Block and a list of RoomState.
     """
     print("Simulation started.")
     start = time.perf_counter()
-
-    fee_dist = stats.truncnorm((fee_min - fee_loc) / fee_scale,
-                               (fee_max - fee_loc) / fee_scale,
-                               loc=fee_loc, scale=fee_scale)
-    # set pseudo random generator of fee_dist
-    fee_dist.random_state = g
 
     transactions = []
     blocks = []
@@ -49,7 +38,7 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee
 
         if event_name == 'arrival':
             if fees:
-                tx = Tx(fee=fee_dist.rvs(1), arrival=scheduler.t)
+                tx = Tx(fee=g.choice(ratios), arrival=scheduler.t)
             else:
                 tx = Tx(fee=0, arrival=scheduler.t)
 
@@ -94,7 +83,7 @@ def mm1_simulation(generators,
                    _lambda,
                    mu1,
                    mu2,
-                   fees, fee_min, fee_loc, fee_max, fee_scale,
+                   fees, ratios,
                    **p):
     """
     Simulate the blockchain system with a M/M/1 queue.
@@ -110,7 +99,7 @@ def mm1_simulation(generators,
     """
     scheduler = MDoubleM(generators, _lambda, mu1, mu2)
 
-    return simulation(scheduler, generators[3], b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee_max, fee_scale)
+    return simulation(scheduler, generators[3], b, sigma, tau, upsilon, fees, ratios)
 
 
 def map_ph_simulation(generators,
@@ -118,7 +107,7 @@ def map_ph_simulation(generators,
                       C, D, omega,
                       S, beta,
                       T, alpha,
-                      fees, fee_min, fee_loc, fee_max, fee_scale,
+                      fees, ratios,
                       **p):
     """
     Simulate the blockchain system with a MAP/PH/1 queue.
@@ -134,7 +123,8 @@ def map_ph_simulation(generators,
     :param T: Generating matrix for PH (mining)
     :param alpha: Absorbing transitions probability vector for PH (mining)
     :param p: other unused parameters
+    :return: see simulation
     """
     scheduler = MapDoublePh(generators, C, D, omega, S, beta, T, alpha)
 
-    return simulation(scheduler, generators[8], b, sigma, tau, upsilon, fees, fee_min, fee_loc, fee_max, fee_scale)
+    return simulation(scheduler, generators[8], b, sigma, tau, upsilon, fees, ratios)

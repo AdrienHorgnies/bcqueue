@@ -59,13 +59,7 @@ class Parameters:
     alpha: float
     ph_mining_size: Rule = lambda T, alpha: len(T) == len(alpha), "T and alpha must have the same size!"
 
-    fee_loc: float
-    fee_min: float
-    fee_max: float
-    fee_scale: float
-    min_loc_max: Rule = lambda fee_min, fee_loc, fee_max: fee_min < fee_loc < fee_max, "fee_min < fee_loc < fee_max"
-    min_gt_0: Rule = lambda fee_min: fee_min >= 0, "fee_min >= 0"
-    scale_gt_0: Rule = lambda fee_scale: fee_scale > 0, "fee_scale > 0"
+    ratios: float
 
     @classmethod
     def get_from(cls, _dir):
