@@ -8,7 +8,7 @@ from dataclasses import dataclass
 class Block:
     selection: float  # when it selected transactions
     size: int  # number of selected transactions
-    mining: float = None  # when it was mined
+    broadcast: float = None  # when it was mined
 
 
 @dataclass(order=True)
@@ -16,7 +16,7 @@ class Tx:
     ratio: float  # ratio of fee / weight
     arrival: float  # when it arrives into the queue
     selection: float = None  # when it was selected in a block
-    mining: float = None  # when the containing block was mined
+    broadcast: float = None  # when the containing block was broadcast
 
 
 @dataclass

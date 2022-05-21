@@ -16,7 +16,7 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, ratios):
     :param b: max number of transactions in a block
     :param sigma: time to start recording transaction arrivals and block selections
     :param tau: time to stop recording transactions arrivals and block selections
-    :param upsilon: extra time to continue record transaction and block mining
+    :param upsilon: extra time to continue record transaction and block broadcast
     :param fees: if fees must be used to prioritize transactions, random otherwise
     :param ratios: a list of fee on weight ratios to randomly choose from
     :return: the measures recorded during the simulation, a mapping with keys transactions, blocks and room_states;
@@ -38,9 +38,9 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, ratios):
 
         if event_name == 'arrival':
             if fees:
-                tx = Tx(fee=g.choice(ratios), arrival=scheduler.t)
+                tx = Tx(ratio=g.choice(ratios), arrival=scheduler.t)
             else:
-                tx = Tx(fee=0, arrival=scheduler.t)
+                tx = Tx(ratio=0, arrival=scheduler.t)
 
             waiting_room.append(tx)
 
@@ -65,10 +65,10 @@ def simulation(scheduler, g, b, sigma, tau, upsilon, fees, ratios):
             if sigma <= scheduler.t < tau:
                 blocks.append(block)
                 room_states.append(RoomState(t=scheduler.t, size=len(waiting_room)))
-        elif event_name == 'mining':
-            block.mining = scheduler.t
+        elif event_name == 'broadcast':
+            block.broadcast = scheduler.t
             for tx in server_room:
-                tx.mining = scheduler.t
+                tx.broadcast = scheduler.t
 
     print(f"Simulation finished in {time.perf_counter() - start:.0f} seconds.")
     return {
@@ -93,7 +93,7 @@ def mm1_simulation(generators,
     :param generators: Pseudo random generators (use indices 0 to 4)
     :param _lambda: Expected inter-arrival time
     :param mu1: Expected selection duration
-    :param mu2: Expected mining duration
+    :param mu2: Expected broadcast duration
     :param p: other unused parameters
     :return: see simulation
     """
@@ -120,8 +120,8 @@ def map_ph_simulation(generators,
     :param omega: Stationary probability vector for MAP
     :param S: Generating matrix for PH (selection)
     :param beta: Absorbing transitions probability vector for PH (selection)
-    :param T: Generating matrix for PH (mining)
-    :param alpha: Absorbing transitions probability vector for PH (mining)
+    :param T: Generating matrix for PH (broadcast)
+    :param alpha: Absorbing transitions probability vector for PH (broadcast)
     :param p: other unused parameters
     :return: see simulation
     """

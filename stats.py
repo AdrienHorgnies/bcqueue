@@ -33,15 +33,15 @@ def compute_print_stats(transactions, blocks, room_states):
         'completions': np.empty(len(transactions))
     }
 
-    if any(tx.fee for tx in transactions):
-        stats['fees'] = np.empty(len(transactions))
+    if any(tx.ratio for tx in transactions):
+        stats['ratios'] = np.empty(len(transactions))
 
     for idx, tx in enumerate(transactions):
         stats['arrivals'][idx] = tx.arrival
         stats['services'][idx] = tx.selection
-        stats['completions'][idx] = tx.mining
-        if 'fees' in stats:
-            stats['fees'][idx] = tx.fee
+        stats['completions'][idx] = tx.broadcast
+        if 'ratios' in stats:
+            stats['ratios'][idx] = tx.ratio
 
     stats['inter_arrival_times'] = np.ediff1d(stats['arrivals'])
     stats['sojourn_durations'] = stats['completions'] - stats['arrivals']
@@ -49,21 +49,21 @@ def compute_print_stats(transactions, blocks, room_states):
     stats['service_durations'] = stats['completions'] - stats['services']
 
     # ignore last block if not mined, very unlikely if sufficient extra time is provided
-    if blocks[-1].mining is None:
+    if blocks[-1].broadcast is None:
         blocks = blocks[:-1]
-    stats['inter_block_times'] = np.ediff1d([b.mining for b in blocks])
+    stats['inter_block_times'] = np.ediff1d([b.broadcast for b in blocks])
     stats['block_sizes'] = np.array([b.size for b in blocks], dtype=int)
 
     stats['room_times'] = np.array([s.t for s in room_states])
     stats['room_sizes'] = np.array([s.size for s in room_states], dtype=int)
 
     no_selection = np.isnan(stats['services']).sum()
-    no_mining = np.isnan(stats['completions']).sum()
+    no_broadcast = np.isnan(stats['completions']).sum()
 
     print(f"""
     All transactions : {len(transactions)} (100%)
     Non selected transactions : {no_selection} ({no_selection / len(stats['services']):.3%})
-    Non mined transactions : {no_mining} ({no_mining / len(stats['completions']):.3%})
+    Non mined transactions : {no_broadcast} ({no_broadcast / len(stats['completions']):.3%})
     
     Average sojourn duration : {np.nanmean(stats['sojourn_durations']):.0f}
     Average waiting duration : {np.nanmean(stats['waiting_durations']):.0f}

@@ -1,6 +1,6 @@
 """
 Module that defines the stochastic processes used in the simulation.
-Stochastic processes can only provide time and name of associated events (arrival, selection and mining).
+Stochastic processes can only provide time and name of associated events (arrival, selection and broadcast).
 It doesn't define the business logic of the blockchain system.
 """
 from functools import cache
@@ -11,7 +11,7 @@ import numpy as np
 class MapDoublePh:
     """
     A stochastic process composed of a Map and two PhaseType service processes.
-    The service processes, selection and mining, are mutually exclusive:
+    The service processes, selection and broadcast, are mutually exclusive:
       - Only one is active at a time
       - When the active PhaseType process is absorbed, it is swapped with the other one
       - Server starts with selection
@@ -29,8 +29,8 @@ class MapDoublePh:
         :param omega: stationary probability vector of MAP C+D
         :param S: infinitesimal generator of PH process (selection)
         :param beta: stationary probability vector of PH (selection)
-        :param T: infinitesimal generator of PH process (mining)
-        :param alpha: stationary probability vector of PH (mining)
+        :param T: infinitesimal generator of PH process (broadcast)
+        :param alpha: stationary probability vector of PH (broadcast)
         """
         self.g = generators[9]
 
@@ -38,7 +38,7 @@ class MapDoublePh:
 
         self.map = Map(generators[5], C=C, D=D, stationary_probabilities=omega)
         self.ph = PhaseType(generators[6], name='selection', M=S, stationary_probabilities=beta)
-        self.inactive_ph = PhaseType(generators[7], name='mining', M=T, stationary_probabilities=alpha)
+        self.inactive_ph = PhaseType(generators[7], name='broadcast', M=T, stationary_probabilities=alpha)
 
         # events of MAP/PH/1 are represented by their index in this vector
         self.events = list(range(len(C) + len(D) + len(S) + 1))
@@ -195,7 +195,7 @@ class PhaseType(StatefulProcess):
 class MDoubleM:
     """
     A stochastic process composed of a Poisson arrival process and two exponential service processes.
-    The service processes (selection and mining) are mutually exclusive:
+    The service processes (selection and broadcast) are mutually exclusive:
       - Only one is active at a time
       - When the active service process is absorbed, it is swapped with the other one
       - Server starts with selection
@@ -208,7 +208,7 @@ class MDoubleM:
         :param generators: array of pseudo random generators (uses indices 0 to 4)
         :param _lambda: Expected inter-arrival time
         :param mu1: expected service time (selection)
-        :param mu2: expected service time (mining)
+        :param mu2: expected service time (broadcast)
         """
         self.generators = generators
 
@@ -221,7 +221,7 @@ class MDoubleM:
         self.planning = {
             'arrival': self.next_arrival(),
             'selection': self.next_selection(),
-            'mining': float('inf')
+            'broadcast': float('inf')
         }
 
     def next_arrival(self):
@@ -236,9 +236,9 @@ class MDoubleM:
         """
         return self.t + self.generators[1].exponential(self.mu1)
 
-    def next_mining(self):
+    def next_broadcast(self):
         """
-        :return: timing of the next mining, estimated at current time
+        :return: timing of the next broadcast, estimated at current time
         """
         return self.t + self.generators[2].exponential(self.mu2)
 
@@ -255,9 +255,9 @@ class MDoubleM:
             self.planning['arrival'] = self.next_arrival()
         elif event_name == 'selection':
             self.planning['selection'] = float('inf')
-            self.planning['mining'] = self.next_mining()
+            self.planning['broadcast'] = self.next_broadcast()
         else:
-            self.planning['mining'] = float('inf')
+            self.planning['broadcast'] = float('inf')
             self.planning['selection'] = self.next_selection()
 
         return event_name

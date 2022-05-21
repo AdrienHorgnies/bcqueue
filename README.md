@@ -40,7 +40,7 @@ The queue is a two steps batch process :
 - First step is called "transactions selection" or "block selection", the server randomly selects as many transactions
   as it can from the waiting room, with a maximum number of *b* transactions. The set of selected transactions is then
   called a "block".
-- Second step is called "block mining". The server takes the block formed in the previous step and "mines" it. Once this
+- Second step is called "block broadcast". The server takes the block formed in the previous step and "mines" it. Once this
   step is done, the transactions definitely leaves the queue.
 - The first and second steps are mutually exclusive and follow each other without interruption.
 
@@ -67,18 +67,15 @@ Both versions of the queue requires the following parameters :
 - upsilon : The extra time after tau after which the queue shutdowns. If less than one, it's considered to be a fraction
   of tau.
 
-The truncated normal distribution of the fees is defined by the following parameters :
+The ratio of fees / weight of the transaction is simulated by randomly selecting them from a sample :
 
-- fee_loc : The centre or mean
-- fee_scale : The standard deviation
-- fee_min : The lower bound
-- fee_max : the upper bound
+- ratios : A column vector containing a sample of fees/weight ratios.
 
 The M/M/1 queue requires the following parameters :
 
 - lambda : The expected interarrival time.
 - mu1 : The expected "transactions selection" duration.
-- mu2 : The expected "block mining" duration.
+- mu2 : The expected "block broadcast" duration.
 
 The MAP/PH/1 queue requires the following parameters :
 
@@ -87,13 +84,13 @@ The MAP/PH/1 queue requires the following parameters :
 - omega : Vector of the stationary probabilities of the initial state of the MAP process.
 - S : Square matrix to generate the PH process for the block selection.
 - beta : Vector of the absorbing transitions probabilities for block selection (length equal to one side of S).
-- T : Square matrix to generate the PH process for the block mining.
-- alpha : Vector of the absorbing transitions probabilities for the block mining (length equal to one side of T).
+- T : Square matrix to generate the PH process for the block broadcast.
+- alpha : Vector of the absorbing transitions probabilities for the block broadcast (length equal to one side of T).
 
 ## Measures
 
 Transaction arrivals, blocks selection and waiting room size are recorded from sigma to tau.
-Blocks mining are recorded from sigma to tau + upsilon.
+Blocks broadcast are recorded from sigma to tau + upsilon.
 
 All records are then aggregated into the following measures :
 
@@ -102,7 +99,7 @@ All records are then aggregated into the following measures :
   the embedding of a block containing this transaction in the blockchain.
 - The waiting time : The time between the arrival and the selection of a transaction.
 - The service time : The time a transaction spends into the server.
-- The block time : The time between successive blocks mining time.
+- The block time : The time between successive blocks broadcast time.
 - The block size : The number of transactions per block
 - The waiting room size : The number of transactions in the waiting room.
 - Unconfirmed transactions : The number of transactions unconfirmed per fee.

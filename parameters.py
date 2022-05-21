@@ -57,7 +57,7 @@ class Parameters:
 
     T: float
     alpha: float
-    ph_mining_size: Rule = lambda T, alpha: len(T) == len(alpha), "T and alpha must have the same size!"
+    ph_broadcast_size: Rule = lambda T, alpha: len(T) == len(alpha), "T and alpha must have the same size!"
 
     ratios: float
 

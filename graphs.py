@@ -110,9 +110,9 @@ def trajectory(room_times, room_sizes, ax):
 
 
 @Graph("Temps de confirmation en fonction des ratios frais/poids", ylabel="Temps de confirmation", xlabel="Ratio frais/poids (satoshi/WU)")
-def sojourn_fees_boxplot(sojourn_durations, fees, ax):
-    edges = np.histogram_bin_edges(fees, bins='doane')
-    bin_indices = np.digitize(fees, edges)
+def sojourn_ratios_boxplot(sojourn_durations, ratios, ax):
+    edges = np.histogram_bin_edges(ratios, bins='doane')
+    bin_indices = np.digitize(ratios, edges)
 
     bins = [[] for _ in range(len(edges))]
 
@@ -126,19 +126,19 @@ def sojourn_fees_boxplot(sojourn_durations, fees, ax):
 
 
 @Graph("Transactions non confirmées", ylabel="Nombre de transactions", xlabel="Ratios frais/poids (satoshi/WU)")
-def served_unconfirmed(services, completions, fees, ax):
+def served_unconfirmed(services, completions, ratios, ax):
     served_unconfirmed_indices = np.logical_and(
         np.invert(np.isnan(services)),
         np.isnan(completions)
     )
-    served_unconfirmed_fees = fees[served_unconfirmed_indices]
+    served_unconfirmed_ratios = ratios[served_unconfirmed_indices]
 
     not_served_unconfirmed_indices = np.logical_and(
         np.isnan(services),
         np.isnan(completions)
     )
-    not_served_unconfirmed_fees = fees[not_served_unconfirmed_indices]
+    not_served_unconfirmed_ratios = ratios[not_served_unconfirmed_indices]
 
-    ax.hist([not_served_unconfirmed_fees, served_unconfirmed_fees],
+    ax.hist([not_served_unconfirmed_ratios, served_unconfirmed_ratios],
             histtype='barstacked', bins='auto', label=['Non servies', 'Servies'])
     ax.legend(prop={'size': 10})
