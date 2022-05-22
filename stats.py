@@ -62,8 +62,8 @@ def compute_print_stats(transactions, blocks, room_states):
 
     print(f"""
     All transactions : {len(transactions)} (100%)
-    Non selected transactions : {no_selection} ({no_selection / len(stats['services']):.3%})
-    Non mined transactions : {no_broadcast} ({no_broadcast / len(stats['completions']):.3%})
+    Non mined transactions : {no_selection} ({no_selection / len(stats['services']):.3%})
+    Non broadcast transactions : {no_broadcast} ({no_broadcast / len(stats['completions']):.3%})
     
     Average sojourn duration : {np.nanmean(stats['sojourn_durations']):.0f}
     Average waiting duration : {np.nanmean(stats['waiting_durations']):.0f}
