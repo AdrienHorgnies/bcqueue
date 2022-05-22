@@ -53,7 +53,7 @@ class Graph:
                 return
 
             fig, ax = plt.subplots()
-            fig.canvas.manager.set_window_title(f"{self.title} ({parameters['queue_name']})")
+            fig.canvas.manager.set_window_title(f"{self.title.replace('/', '_')} ({parameters['queue_name']})")
 
             ax.set(xlabel=self.xlabel, ylabel=self.ylabel,
                    title=self.title)

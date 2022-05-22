@@ -61,11 +61,11 @@ extension `.csv`. For examples, see the `parameters` folder this repository cont
 Both versions of the queue requires the following parameters :
 
 - b : The max number of transactions a block can contain.
-- sigma : The time at which the simulation stops recording new transactions. If less than one, it's considered to be a
+- sigma : The time at which the software starts recording data. If less than one, it's considered to be a
   fraction of tau.
-- tau : The time at which the simulation stops recording new transactions.
+- tau : The time at which the simulation stops recording the arrival of new transactions.
 - upsilon : The extra time after tau after which the queue shutdowns. If less than one, it's considered to be a fraction
-  of tau.
+  of tau. During that time, recorded transactions can still finish.
 
 The ratio of fees / weight of the transaction is simulated by randomly selecting them from a sample :
 
