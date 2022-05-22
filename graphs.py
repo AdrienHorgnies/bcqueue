@@ -74,12 +74,12 @@ def draw(**parameters):
         graph_handler(**parameters)
 
 
-@Graph("Temps de confirmation des transactions", ylabel="Nombre de transactions", xlabel="Temps")
+@Graph("Temps de confirmation des transactions", ylabel="Nombre de transactions", xlabel="Temps (secondes)")
 def sojourn_duration(sojourn_durations, ax):
     ax.hist(sojourn_durations, bins='auto')
 
 
-@Graph("Temps d'attente des transactions", ylabel="Nombre de transactions", xlabel="Temps")
+@Graph("Temps de génération", ylabel="Nombre de transactions", xlabel="Temps (secondes)")
 def waiting_duration(waiting_durations, ax):
     ax.hist(waiting_durations, bins='auto')
 
@@ -89,12 +89,12 @@ def block_time(inter_block_times, ax):
     ax.hist(inter_block_times, bins='auto')
 
 
-@Graph("Temps de service", xlabel="Temps", ylabel="Nombre de transactions")
+@Graph("Temps de diffusion", xlabel="Temps", ylabel="Nombre de transactions")
 def service_time(service_durations, ax):
     ax.hist(service_durations, bins='auto')
 
 
-@Graph("Temps inter-arrivées", ylabel="Nombre d'arrivées", xlabel="Temps")
+@Graph("Temps inter-arrivées", ylabel="Nombre d'arrivées", xlabel="Temps (secondes)")
 def inter_arrival_time(inter_arrival_times, ax):
     ax.hist(inter_arrival_times, bins='auto')
 
@@ -104,7 +104,7 @@ def block_size(block_sizes, ax):
     ax.hist(block_sizes, bins='auto')
 
 
-@Graph("Trajectoire de la file d'attente", ylabel="Nombre de transactions", xlabel="Temps")
+@Graph("Trajectoire de la file d'attente", ylabel="Nombre de transactions", xlabel="Temps (secondes)")
 def trajectory(room_times, room_sizes, ax):
     ax.plot(room_times, room_sizes)
 
