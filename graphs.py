@@ -120,7 +120,7 @@ def sojourn_ratios_boxplot(sojourn_durations, ratios, ax):
         if not np.isnan(sojourn):
             bins[idx - 1].append(sojourn)
 
-    labels = [f"{e:.3f}" for e in edges]
+    labels = [f"{e:.0f}" for e in edges]
     ax.boxplot(bins, labels=labels, showfliers=False, showmeans=True)
     ax.set_xticklabels(labels, rotation=45, ha='right')
 
